@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from dotenv import load_dotenv
 
 from pipeline.processing.snapshotter import build_snapshot
+from pipeline.generation.case_file_builder import CaseFileDraft
 from shared.models import IngestedSignal
 
 
@@ -91,6 +92,52 @@ class SupabaseRepository:
                 "p_canonical_signal_id": canonical_signal_id,
             },
         )
+
+    def persist_case_file_draft(self, draft: CaseFileDraft, signal_ids: list[str]) -> str:
+        topic_id = self._rpc(
+            "upsert_topic_cluster",
+            {
+                "p_title": draft.title,
+                "p_signal_ids": signal_ids,
+                "p_significance_score": draft.significance_score,
+                "p_summary": draft.neutral_summary,
+            },
+        )
+        if not topic_id:
+            raise RuntimeError(f"Could not persist topic draft {draft.title}")
+        for event in draft.events:
+            self._rpc(
+                "append_topic_event",
+                {
+                    "p_topic_id": topic_id,
+                    "p_event_date": event.event_date,
+                    "p_description": event.description,
+                    "p_source_signal_ids": list(event.source_signal_ids),
+                },
+            )
+        for claim in draft.claims:
+            self._rpc(
+                "append_topic_claim",
+                {
+                    "p_topic_id": topic_id,
+                    "p_claim_text": claim.claim_text,
+                    "p_source_type": claim.source_type,
+                    "p_source_signal_id": claim.source_signal_id,
+                    "p_quoted_span": claim.quoted_span,
+                },
+            )
+        for fact in draft.verifiable_facts:
+            self._rpc(
+                "append_topic_fact",
+                {
+                    "p_topic_id": topic_id,
+                    "p_fact_text": fact.fact_text,
+                    "p_primary_doc_url": fact.primary_doc_url,
+                    "p_doc_type": fact.doc_type,
+                    "p_quoted_span": fact.quoted_span,
+                },
+            )
+        return topic_id
 
     def _rpc(self, function_name: str, payload: dict) -> object:
         """Call one trusted SQL RPC function using the service role."""

@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime
 
+from pipeline.generation.case_file_builder import CaseFileDraft, DraftClaim, DraftEvent, DraftFact
 from pipeline.storage import supabase_repository
 from pipeline.storage.supabase_repository import SupabaseRepository
 from shared.models import IngestedSignal
@@ -114,3 +115,35 @@ def test_mark_signal_duplicate_rpc(monkeypatch) -> None:
             },
         )
     ]
+
+
+def test_persist_case_file_draft_calls_append_rpcs(monkeypatch) -> None:
+    calls = []
+
+    def fake_rpc(self, function_name, payload):
+        calls.append((function_name, payload))
+        if function_name == "upsert_topic_cluster":
+            return "topic-id"
+        return "row-id"
+
+    monkeypatch.setattr(SupabaseRepository, "_rpc", fake_rpc)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+    draft = CaseFileDraft(
+        title="Reserve Bank of India",
+        neutral_summary="summary",
+        significance_score=42,
+        promotable=False,
+        events=(DraftEvent("2026-07-20", "event", ("signal-id",), ("https://rbi/a",)),),
+        claims=(DraftClaim("govt", "claim", "quote", "signal-id", "https://rbi/a"),),
+        verifiable_facts=(DraftFact("fact", "https://rbi/a", "dataset", "quote"),),
+        related_entities=("Reserve Bank of India",),
+    )
+
+    assert repository.persist_case_file_draft(draft, ["signal-id"]) == "topic-id"
+    assert [call[0] for call in calls] == [
+        "upsert_topic_cluster",
+        "append_topic_event",
+        "append_topic_claim",
+        "append_topic_fact",
+    ]
+    assert calls[0][1]["p_signal_ids"] == ["signal-id"]

@@ -113,3 +113,11 @@ python -m pipeline.case_file_report --signals 300 --topics 5 --json
 ```
 
 These drafts are audit material only: no Gemini, no public publishing, and every claim/event/fact is copied from a source row with a URL.
+
+After running [`db/migrations/004_case_file_persistence.sql`](db/migrations/004_case_file_persistence.sql), persist private extractive drafts:
+
+```powershell
+python -m pipeline.case_file_persist --signals 300 --topics 5
+```
+
+Use `--promotable-only` when you only want clusters that pass the official-plus-nonofficial significance gate.
