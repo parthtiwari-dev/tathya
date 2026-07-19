@@ -92,3 +92,25 @@ def test_recent_signals_gets_joined_source_rows(monkeypatch) -> None:
     repository = SupabaseRepository("https://project.supabase.co", "test-key")
 
     assert repository.recent_signals(5)[0]["sources"]["source_key"] == "rbi-press-releases"
+
+
+def test_mark_signal_duplicate_rpc(monkeypatch) -> None:
+    calls = []
+
+    def fake_rpc(self, function_name, payload):
+        calls.append((function_name, payload))
+
+    monkeypatch.setattr(SupabaseRepository, "_rpc", fake_rpc)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    repository.mark_signal_duplicate("duplicate-id", "canonical-id")
+
+    assert calls == [
+        (
+            "mark_signal_duplicate",
+            {
+                "p_duplicate_signal_id": "duplicate-id",
+                "p_canonical_signal_id": "canonical-id",
+            },
+        )
+    ]

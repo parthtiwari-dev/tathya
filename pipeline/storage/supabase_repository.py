@@ -83,6 +83,15 @@ class SupabaseRepository:
         result = self._get(f"signals?{query}")
         return result if isinstance(result, list) else []
 
+    def mark_signal_duplicate(self, duplicate_signal_id: str, canonical_signal_id: str) -> None:
+        self._rpc(
+            "mark_signal_duplicate",
+            {
+                "p_duplicate_signal_id": duplicate_signal_id,
+                "p_canonical_signal_id": canonical_signal_id,
+            },
+        )
+
     def _rpc(self, function_name: str, payload: dict) -> object:
         """Call one trusted SQL RPC function using the service role."""
         request = Request(

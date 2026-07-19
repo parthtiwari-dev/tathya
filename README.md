@@ -92,3 +92,24 @@ python -m pipeline.topic_report --signals 300 --topics 10
 ```
 
 This is deterministic entity matching and grouping only. It does not call Gemini and does not publish case files.
+
+Review likely wire-copy or near-duplicate records:
+
+```powershell
+python -m pipeline.duplicate_scan --signals 300 --threshold 0.82
+```
+
+After running [`db/migrations/003_mark_signal_duplicate.sql`](db/migrations/003_mark_signal_duplicate.sql), clearly reviewed candidates can be marked with:
+
+```powershell
+python -m pipeline.duplicate_scan --signals 300 --threshold 0.82 --apply
+```
+
+Build private Phase 3 extractive case-file drafts:
+
+```powershell
+python -m pipeline.case_file_report --signals 300 --topics 5
+python -m pipeline.case_file_report --signals 300 --topics 5 --json
+```
+
+These drafts are audit material only: no Gemini, no public publishing, and every claim/event/fact is copied from a source row with a URL.

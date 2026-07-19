@@ -2,7 +2,7 @@
 
 import argparse
 
-from pipeline.processing.topic_report import build_candidate_topics
+from pipeline.processing.clusterer import cluster_signals
 from pipeline.storage.supabase_repository import SupabaseRepository
 
 
@@ -14,18 +14,29 @@ def main(argv: list[str] | None = None) -> int:
 
     repository = SupabaseRepository.from_environment()
     rows = repository.recent_signals(limit=args.signals)
-    candidates = build_candidate_topics(rows, limit=args.topics)
+    candidates = cluster_signals(rows, limit=args.topics)
     print(f"Inspected {len(rows)} recent signals")
     print(f"Candidate topics: {len(candidates)}")
     for index, candidate in enumerate(candidates, start=1):
         print(f"\n{index}. {candidate.key}")
-        print(f"   score: {candidate.score}")
-        print(f"   signals: {candidate.signal_count} canonical: {candidate.canonical_count}")
-        print(f"   sources: {', '.join(candidate.source_keys)}")
-        print(f"   entities: {', '.join(candidate.top_entities) if candidate.top_entities else 'none'}")
-        for url in candidate.representative_urls:
+        print(f"   score: {candidate.significance.score:g} promotable: {candidate.significance.promotable}")
+        print(f"   signals: {len(candidate.rows)} canonical: {candidate.significance.canonical_count}")
+        print(f"   sources: {candidate.significance.independent_source_count}")
+        print(f"   official+nonofficial: {candidate.significance.official_source_present}/{candidate.significance.media_or_citizen_source_present}")
+        print(f"   duplicate_pairs_nearby: {candidate.duplicate_pairs}")
+        print(f"   entities: {', '.join(candidate.entities) if candidate.entities else 'none'}")
+        for url in _representative_urls(candidate.rows):
             print(f"   url: {url}")
     return 0
+
+
+def _representative_urls(rows) -> list[str]:
+    urls = []
+    for row in rows:
+        url = row.get("url")
+        if url and url not in urls:
+            urls.append(url)
+    return urls[:3]
 
 
 if __name__ == "__main__":
