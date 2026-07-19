@@ -36,3 +36,28 @@ def test_build_candidate_topics_tracks_canonical_count() -> None:
 
     assert topic.signal_count == 2
     assert topic.canonical_count == 1
+
+
+def test_build_candidate_topics_promotes_cross_source_public_actor_topic() -> None:
+    rows = [
+        {
+            "title": "Sonam Wangchuk hunger strike",
+            "raw_text": "Sonam Wangchuk hunger strike continues.",
+            "url": "https://a",
+            "duplicate_of_signal_id": None,
+            "sources": {"source_key": "indian-express-india"},
+        },
+        {
+            "title": "Wangchuk can end hunger strike",
+            "raw_text": "Wangchuk can end hunger strike, says family.",
+            "url": "https://b",
+            "duplicate_of_signal_id": None,
+            "sources": {"source_key": "hindustan-times-india"},
+        },
+    ]
+
+    topic = build_candidate_topics(rows)[0]
+
+    assert topic.key == "Sonam Wangchuk"
+    assert topic.signal_count == 2
+    assert set(topic.source_keys) == {"hindustan-times-india", "indian-express-india"}

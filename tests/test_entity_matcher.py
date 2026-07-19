@@ -13,3 +13,12 @@ def test_match_entities_does_not_match_substrings() -> None:
     matches = match_entities("This talks about orbit and merit only.")
 
     assert "Reserve Bank of India" not in {match.name for match in matches}
+
+
+def test_match_entities_includes_seeded_public_actors() -> None:
+    matches = match_entities("Sonam Wangchuk and Anna Hazare appealed to PM Modi.")
+    names = {match.name for match in matches}
+
+    assert "Sonam Wangchuk" in names
+    assert "Anna Hazare" in names
+    assert "Narendra Modi" in names

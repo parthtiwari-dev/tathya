@@ -17,7 +17,7 @@ class CandidateTopic:
 
     @property
     def score(self) -> int:
-        return self.canonical_count * 10 + len(self.source_keys) * 5 + len(self.top_entities)
+        return self.canonical_count * 10 + len(self.source_keys) * 10 + len(self.top_entities)
 
 
 def build_candidate_topics(signal_rows: list[dict], limit: int = 10) -> list[CandidateTopic]:
