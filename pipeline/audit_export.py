@@ -5,10 +5,12 @@ import csv
 import sys
 from urllib.parse import urlencode
 
+from pipeline.cli_encoding import ensure_utf8_stdout
 from pipeline.storage.supabase_repository import SupabaseRepository
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_stdout()
     parser = argparse.ArgumentParser(description="Export claims/events/facts for manual Phase 3 audit.")
     parser.add_argument("--limit", type=int, default=50)
     parser.add_argument("--target", choices=("claims", "events", "facts"), default="claims")
