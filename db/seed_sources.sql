@@ -2,6 +2,7 @@
 insert into sources (source_key, name, type, url, trust_category, enabled) values
   ('pib-press-releases', 'Press Information Bureau - Press Releases', 'pib', 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1', 'official', false),
   ('pmo-youtube', 'PMO India - YouTube', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCDS9hpqUEXsXUIcf0qDcBIA', 'official', false),
+  ('pmindia-news-updates', 'Prime Minister of India - News Updates', 'official_website', 'https://www.pmindia.gov.in/en/news-updates/', 'official', false),
   ('indian-express-india', 'The Indian Express - India', 'rss', 'https://indianexpress.com/section/india/feed/', 'media', true),
   ('hindustan-times-india', 'Hindustan Times - India', 'rss', 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', 'media', true),
   ('the-wire', 'The Wire', 'rss', 'https://thewire.in/feed/', 'media', false),

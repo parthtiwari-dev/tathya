@@ -73,6 +73,8 @@ python -m pipeline.source_activation --source hindustan-times-india --limit 100
 
 If your Supabase project predates the activation command, first run [`db/migrations/001_source_activation.sql`](db/migrations/001_source_activation.sql) in the SQL Editor.
 
+If you want to test `pmindia-news-updates`, first run [`db/migrations/002_official_website_sources.sql`](db/migrations/002_official_website_sources.sql), then rerun [`db/seed_sources.sql`](db/seed_sources.sql). Existing projects need the migration because `official_website` is a new `source_type` enum value.
+
 The scheduler currently polls only enabled sources. Keep candidates disabled until their adapter, timestamp quality, canonical URLs, raw text, snapshots, duplicate behavior, and terms posture are checked. Add sources to `shared/config.py`, never individual stories.
 
 See [`docs/source_research.md`](docs/source_research.md) for the current multi-source activation register and the reason every non-enabled source is held back.

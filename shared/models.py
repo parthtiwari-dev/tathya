@@ -13,6 +13,7 @@ class SourceType(StrEnum):
     YOUTUBE = "youtube"
     PIB = "pib"
     PARLIAMENT = "parliament"
+    OFFICIAL_WEBSITE = "official_website"
 
 
 class TrustCategory(StrEnum):

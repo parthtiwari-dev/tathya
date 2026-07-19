@@ -27,6 +27,14 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         enabled=False,
     ),
     SourceDefinition(
+        key="pmindia-news-updates",
+        name="Prime Minister of India - News Updates",
+        type=SourceType.OFFICIAL_WEBSITE,
+        url="https://www.pmindia.gov.in/en/news-updates/",
+        trust_category=TrustCategory.OFFICIAL,
+        enabled=False,
+    ),
+    SourceDefinition(
         key="indian-express-india",
         name="The Indian Express - India",
         type=SourceType.RSS,

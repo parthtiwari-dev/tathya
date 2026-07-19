@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from pipeline.ingestion.official_website import parse_pmindia_article, parse_pmindia_listing
 from pipeline.ingestion.parliament_scraper import parse_parliament_html
 from pipeline.ingestion.pib_scraper import parse_pib_feed
 from pipeline.ingestion import youtube_watcher
@@ -54,3 +55,60 @@ def test_dispatcher_selects_pib_adapter(monkeypatch) -> None:
     source = SourceDefinition(key="pib", name="PIB", type=SourceType.PIB, url="https://pib.gov.in/feed", trust_category=TrustCategory.OFFICIAL)
     monkeypatch.setattr("pipeline.ingestion.dispatcher.fetch_pib_signals", lambda selected: ["ok"])
     assert fetch_signals(source) == ["ok"]
+
+
+def test_dispatcher_selects_official_website_adapter(monkeypatch) -> None:
+    source = SourceDefinition(
+        key="pmindia-news-updates",
+        name="PM India",
+        type=SourceType.OFFICIAL_WEBSITE,
+        url="https://www.pmindia.gov.in/en/news-updates/",
+        trust_category=TrustCategory.OFFICIAL,
+    )
+    monkeypatch.setattr("pipeline.ingestion.dispatcher.fetch_official_website_signals", lambda selected: ["ok"])
+    assert fetch_signals(source) == ["ok"]
+
+
+def test_pmindia_listing_deduplicates_article_links() -> None:
+    source = SourceDefinition(
+        key="pmindia-news-updates",
+        name="PM India",
+        type=SourceType.OFFICIAL_WEBSITE,
+        url="https://www.pmindia.gov.in/en/news-updates/",
+        trust_category=TrustCategory.OFFICIAL,
+    )
+    payload = b"""
+    <a href="https://www.pmindia.gov.in/en/news_updates/sample/">Sample title</a>
+    <a href="https://www.pmindia.gov.in/en/news_updates/sample/">Sample title</a>
+    <a href="https://www.pmindia.gov.in/en/other/">Ignore me</a>
+    """
+    articles = parse_pmindia_listing(source, payload)
+    assert len(articles) == 1
+    assert articles[0].url == "https://www.pmindia.gov.in/en/news_updates/sample/?comment=disable"
+    assert articles[0].title == "Sample title"
+
+
+def test_pmindia_article_extracts_body_not_sidebar() -> None:
+    source = SourceDefinition(
+        key="pmindia-news-updates",
+        name="PM India",
+        type=SourceType.OFFICIAL_WEBSITE,
+        url="https://www.pmindia.gov.in/en/news-updates/",
+        trust_category=TrustCategory.OFFICIAL,
+    )
+    payload = b"""
+    <h4>News Updates</h4>
+    <h2>PM announces a public update</h2>
+    <p>19 Jul, 2026</p>
+    <p>The Prime Minister announced the first official paragraph.</p>
+    <blockquote>A quoted public statement.</blockquote>
+    <p>Loading</p>
+    <p>Popular sidebar text must not appear.</p>
+    """
+    signal = parse_pmindia_article(source, "https://www.pmindia.gov.in/en/news_updates/sample/?comment=disable", payload)
+    assert signal is not None
+    assert signal.title == "PM announces a public update"
+    assert signal.published_at == datetime(2026, 7, 19, tzinfo=UTC)
+    assert "first official paragraph" in signal.raw_text
+    assert "quoted public statement" in signal.raw_text
+    assert "Popular sidebar" not in signal.raw_text

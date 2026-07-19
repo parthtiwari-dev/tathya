@@ -1,7 +1,7 @@
 -- Tathya Phase 0 database foundation. Run in a fresh Supabase SQL editor.
 create extension if not exists pgcrypto;
 create extension if not exists vector;
-create type source_type as enum ('rss', 'x', 'youtube', 'pib', 'parliament');
+create type source_type as enum ('rss', 'x', 'youtube', 'pib', 'parliament', 'official_website');
 create type trust_category as enum ('official', 'media', 'citizen', 'foreign');
 create type topic_status as enum ('raw_cluster', 'live', 'archived');
 create type claim_source_type as enum ('govt', 'media', 'citizen', 'opposition');
