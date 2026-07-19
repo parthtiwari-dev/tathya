@@ -121,3 +121,25 @@ python -m pipeline.case_file_persist --signals 300 --topics 5
 ```
 
 Use `--promotable-only` when you only want clusters that pass the official-plus-nonofficial significance gate.
+
+## Semantic retrieval
+
+Tathya uses Supabase Postgres with `pgvector`; embeddings are stored in `signals.embedding`. The first model target is `intfloat/multilingual-e5-base`, a 768-dimensional multilingual sentence-transformers model.
+
+Install the optional local embedding dependencies:
+
+```powershell
+python -m pip install -e ".[embeddings]"
+```
+
+After running [`db/migrations/005_signal_embeddings.sql`](db/migrations/005_signal_embeddings.sql), embed recent signals:
+
+```powershell
+python -m pipeline.embed_signals --limit 300 --batch-size 16
+```
+
+Search embedded signals:
+
+```powershell
+python -m pipeline.semantic_search "Sonam Wangchuk Parliament march" --limit 10
+```

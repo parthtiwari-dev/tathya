@@ -34,6 +34,7 @@ create index source_run_metrics_source_time_idx on source_run_metrics (source_id
 create unique index events_topic_description_date_idx on events (topic_id, event_date, md5(description));
 create unique index claims_topic_signal_text_idx on claims (topic_id, source_signal_id, md5(claim_text));
 create unique index facts_topic_doc_text_idx on verifiable_facts (topic_id, primary_doc_url, md5(fact_text));
+create index signals_embedding_hnsw_idx on signals using hnsw (embedding vector_cosine_ops) where embedding is not null;
 
 -- Atomically write one raw signal and its immutable snapshot. The function is
 -- idempotent per source URL, so re-running a watcher cannot create duplicates.
@@ -263,4 +264,47 @@ begin
   returning id into v_fact_id;
   return v_fact_id;
 end;
+$$;
+
+create function store_signal_embedding(
+  p_signal_id uuid,
+  p_embedding text
+) returns void language plpgsql as $$
+begin
+  update signals
+  set embedding = p_embedding::vector
+  where id = p_signal_id;
+end;
+$$;
+
+create function match_similar_signals(
+  p_query_embedding text,
+  p_match_count integer default 20,
+  p_match_threshold double precision default 0.0
+) returns table (
+  id uuid,
+  published_at timestamptz,
+  title text,
+  raw_text text,
+  url text,
+  source_key text,
+  trust_category trust_category,
+  similarity double precision
+) language sql stable as $$
+  select
+    signal.id,
+    signal.published_at,
+    signal.title,
+    signal.raw_text,
+    signal.url,
+    source.source_key,
+    source.trust_category,
+    1 - (signal.embedding <=> p_query_embedding::vector) as similarity
+  from signals signal
+  join sources source on source.id = signal.source_id
+  where signal.embedding is not null
+    and signal.duplicate_of_signal_id is null
+    and 1 - (signal.embedding <=> p_query_embedding::vector) >= p_match_threshold
+  order by signal.embedding <=> p_query_embedding::vector
+  limit p_match_count;
 $$;

@@ -84,6 +84,32 @@ class SupabaseRepository:
         result = self._get(f"signals?{query}")
         return result if isinstance(result, list) else []
 
+    def recent_signals_without_embeddings(self, limit: int = 100) -> list[dict]:
+        query = urlencode(
+            {
+                "select": "id,published_at,title,raw_text,transcript,url,duplicate_of_signal_id,sources(source_key,trust_category)",
+                "embedding": "is.null",
+                "order": "published_at.desc",
+                "limit": str(limit),
+            }
+        )
+        result = self._get(f"signals?{query}")
+        return result if isinstance(result, list) else []
+
+    def store_signal_embedding(self, signal_id: str, embedding_literal: str) -> None:
+        self._rpc("store_signal_embedding", {"p_signal_id": signal_id, "p_embedding": embedding_literal})
+
+    def match_similar_signals(self, embedding_literal: str, match_count: int = 20, match_threshold: float = 0.0) -> list[dict]:
+        result = self._rpc(
+            "match_similar_signals",
+            {
+                "p_query_embedding": embedding_literal,
+                "p_match_count": match_count,
+                "p_match_threshold": match_threshold,
+            },
+        )
+        return result if isinstance(result, list) else []
+
     def mark_signal_duplicate(self, duplicate_signal_id: str, canonical_signal_id: str) -> None:
         self._rpc(
             "mark_signal_duplicate",

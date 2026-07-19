@@ -95,6 +95,28 @@ def test_recent_signals_gets_joined_source_rows(monkeypatch) -> None:
     assert repository.recent_signals(5)[0]["sources"]["source_key"] == "rbi-press-releases"
 
 
+def test_embedding_repository_methods(monkeypatch) -> None:
+    calls = []
+
+    def fake_rpc(self, function_name, payload):
+        calls.append((function_name, payload))
+        if function_name == "match_similar_signals":
+            return [{"id": "a"}]
+
+    monkeypatch.setattr(SupabaseRepository, "_rpc", fake_rpc)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    repository.store_signal_embedding("signal-id", "[0.1]")
+    assert repository.match_similar_signals("[0.1]", match_count=5, match_threshold=0.7) == [{"id": "a"}]
+    assert calls == [
+        ("store_signal_embedding", {"p_signal_id": "signal-id", "p_embedding": "[0.1]"}),
+        (
+            "match_similar_signals",
+            {"p_query_embedding": "[0.1]", "p_match_count": 5, "p_match_threshold": 0.7},
+        ),
+    ]
+
+
 def test_mark_signal_duplicate_rpc(monkeypatch) -> None:
     calls = []
 
