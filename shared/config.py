@@ -39,7 +39,6 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         type=SourceType.RSS,
         url="https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
         trust_category=TrustCategory.MEDIA,
-        enabled=False,
     ),
     SourceDefinition(
         key="the-wire",

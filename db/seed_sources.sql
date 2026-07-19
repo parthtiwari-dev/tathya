@@ -3,7 +3,7 @@ insert into sources (source_key, name, type, url, trust_category, enabled) value
   ('pib-press-releases', 'Press Information Bureau - Press Releases', 'pib', 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1', 'official', false),
   ('pmo-youtube', 'PMO India - YouTube', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCDS9hpqUEXsXUIcf0qDcBIA', 'official', false),
   ('indian-express-india', 'The Indian Express - India', 'rss', 'https://indianexpress.com/section/india/feed/', 'media', true),
-  ('hindustan-times-india', 'Hindustan Times - India', 'rss', 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', 'media', false),
+  ('hindustan-times-india', 'Hindustan Times - India', 'rss', 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', 'media', true),
   ('the-wire', 'The Wire', 'rss', 'https://thewire.in/feed/', 'media', false),
   ('scroll-in', 'Scroll.in', 'rss', 'https://scroll.in/latest.rss', 'media', false),
   ('ndtv-india', 'NDTV - India', 'rss', 'https://feeds.feedburner.com/ndtvnews-india-news', 'media', false),
