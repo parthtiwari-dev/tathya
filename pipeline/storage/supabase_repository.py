@@ -61,6 +61,16 @@ class SupabaseRepository:
     def record_source_run(self, source_key: str, signal_count: int, status: str, detail: str | None = None) -> None:
         self._rpc("record_source_run", {"p_source_key": source_key, "p_signal_count": signal_count, "p_status": status, "p_detail": detail})
 
+    def set_source_enabled(self, source_key: str, enabled: bool) -> bool:
+        result = self._rpc("set_source_enabled", {"p_source_key": source_key, "p_enabled": enabled})
+        return bool(result)
+
+    def source_activation_summary(self, source_key: str) -> dict:
+        result = self._rpc("source_activation_summary", {"p_source_key": source_key})
+        if not result:
+            return {}
+        return result[0]
+
     def _rpc(self, function_name: str, payload: dict) -> object:
         """Call one trusted SQL RPC function using the service role."""
         request = Request(

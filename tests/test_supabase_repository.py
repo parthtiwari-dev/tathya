@@ -48,3 +48,23 @@ def test_void_rpc_response_is_accepted(monkeypatch) -> None:
     monkeypatch.setattr(supabase_repository, "urlopen", lambda *_args, **_kwargs: Response())
     repository = SupabaseRepository("https://project.supabase.co", "test-key")
     repository.record_source_run("source", 1, "success")
+
+
+def test_source_activation_rpcs(monkeypatch) -> None:
+    calls = []
+
+    def fake_rpc(self, function_name, payload):
+        calls.append((function_name, payload))
+        if function_name == "set_source_enabled":
+            return False
+        return [{"signal_count": 2, "snapshot_count": 2}]
+
+    monkeypatch.setattr(SupabaseRepository, "_rpc", fake_rpc)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    assert repository.set_source_enabled("source", True) is False
+    assert repository.source_activation_summary("source")["signal_count"] == 2
+    assert calls == [
+        ("set_source_enabled", {"p_source_key": "source", "p_enabled": True}),
+        ("source_activation_summary", {"p_source_key": "source"}),
+    ]

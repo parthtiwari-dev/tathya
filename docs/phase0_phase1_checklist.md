@@ -17,6 +17,7 @@ Use this as the operational gate before Phase 2 AI/clustering work.
 
 - Only validated sources are enabled in `shared/config.py`.
 - Disabled candidate sources can be audited with `python -m pipeline.source_audit --source SOURCE_KEY`.
+- Candidate sources can be persisted once with `python -m pipeline.source_activation --source SOURCE_KEY` while keeping GitHub Actions polling disabled.
 - Every enabled source has at least 10 inspected rows with good timestamps, canonical URLs, raw text, and snapshot hashes.
 - `python -m pipeline.scheduler --persist` succeeds locally.
 - GitHub Actions scheduled ingestion succeeds.

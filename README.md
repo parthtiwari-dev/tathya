@@ -65,6 +65,14 @@ Inspect a disabled candidate source without writing to Supabase:
 python -m pipeline.source_audit --source hindustan-times-india --limit 10
 ```
 
+Persist one disabled candidate once for manual Supabase inspection without enabling GitHub Actions polling:
+
+```powershell
+python -m pipeline.source_activation --source hindustan-times-india --limit 100
+```
+
+If your Supabase project predates the activation command, first run [`db/migrations/001_source_activation.sql`](db/migrations/001_source_activation.sql) in the SQL Editor.
+
 The scheduler currently polls only enabled sources. Keep candidates disabled until their adapter, timestamp quality, canonical URLs, raw text, snapshots, duplicate behavior, and terms posture are checked. Add sources to `shared/config.py`, never individual stories.
 
 See [`docs/source_research.md`](docs/source_research.md) for the current multi-source activation register and the reason every non-enabled source is held back.
