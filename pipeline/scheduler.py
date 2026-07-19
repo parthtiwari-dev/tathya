@@ -13,7 +13,12 @@ from shared.config import STARTER_SOURCES
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Fetch configured RSS sources without topic curation.")
     parser.add_argument("--persist", action="store_true", help="Persist signals and snapshots to Supabase.")
+    parser.add_argument("--test-alert", action="store_true", help="Send a Telegram test alert and exit.")
     args = parser.parse_args(argv)
+    if args.test_alert:
+        delivered = send_alert("Tathya test alert: Telegram notifications are configured correctly.")
+        print("Telegram test alert sent" if delivered else "Telegram credentials are missing or alert delivery failed")
+        return 0 if delivered else 1
     repository = SupabaseRepository.from_environment() if args.persist else None
     total = 0
     failed_sources = 0

@@ -45,6 +45,12 @@ PIB, Lok Sabha, Rajya Sabha, and YouTube now have source-specific adapters. They
 
 Optional source-failure and low-volume alerts need `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` added as GitHub repository secrets (and, for local runs, to `.env`).
 
+Verify that Telegram independently of a source failure with:
+
+```powershell
+python -m pipeline.scheduler --test-alert
+```
+
 ## RSS sources
 
 The initial registry records PIB press releases, The Indian Express India feed, and The Wire. The scheduler currently polls only the Indian Express feed: PIB needs its dedicated scraper, while The Wire is disabled because it currently does not return a parseable feed to the transparent watcher user-agent. The scheduler fetches, parses, and snapshots feed entries; it never decides which stories matter. Add sources to `shared/config.py`, never individual stories.
