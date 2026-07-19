@@ -20,6 +20,7 @@ create table claims (id uuid primary key default gen_random_uuid(), topic_id uui
 create table verifiable_facts (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), fact_text text not null, primary_doc_url text not null, doc_type text not null check (doc_type in ('gazette', 'parliament_qa', 'pib', 'dataset')), quoted_span text not null, created_at timestamptz not null default now());
 create table topic_relations (id uuid primary key default gen_random_uuid(), topic_id_a uuid not null references topics(id), topic_id_b uuid not null references topics(id), relation_type relation_type not null, created_at timestamptz not null default now(), check (topic_id_a <> topic_id_b), unique (topic_id_a, topic_id_b, relation_type));
 create table corrections (id uuid primary key default gen_random_uuid(), target_table text not null check (target_table in ('claims', 'events', 'verifiable_facts')), target_row_id uuid not null, issue_description text not null, status correction_status not null default 'reported', resolved_at timestamptz, created_at timestamptz not null default now());
+create table source_run_metrics (id uuid primary key default gen_random_uuid(), source_id uuid not null references sources(id), collected_at timestamptz not null default now(), signal_count integer not null check (signal_count >= 0), status text not null check (status in ('success', 'failure')), detail text);
 
 create function reject_snapshot_mutation() returns trigger language plpgsql as $$ begin raise exception 'snapshots are immutable'; end; $$;
 create trigger snapshots_no_update before update or delete on snapshots for each row execute function reject_snapshot_mutation();
@@ -28,6 +29,8 @@ create index signals_canonical_idx on signals (duplicate_of_signal_id) where dup
 create index topics_live_updated_idx on topics (status, last_signal_at desc);
 create index claims_topic_idx on claims (topic_id, created_at);
 create index events_topic_date_idx on events (topic_id, event_date);
+create index snapshots_content_hash_idx on snapshots (content_hash);
+create index source_run_metrics_source_time_idx on source_run_metrics (source_id, collected_at desc);
 
 -- Atomically write one raw signal and its immutable snapshot. The function is
 -- idempotent per source URL, so re-running a watcher cannot create duplicates.
@@ -38,6 +41,7 @@ create function record_signal_snapshot(
   p_raw_text text,
   p_transcript text,
   p_url text,
+  p_captured_at timestamptz,
   p_raw_content text,
   p_content_hash char(64)
 ) returns uuid language plpgsql as $$
@@ -45,6 +49,7 @@ declare
   v_source_id uuid;
   v_signal_id uuid;
   v_snapshot_id uuid;
+  v_duplicate_of_signal_id uuid;
 begin
   select id into v_source_id from sources where source_key = p_source_key and enabled;
   if v_source_id is null then
@@ -58,11 +63,44 @@ begin
 
   select id into v_snapshot_id from snapshots where signal_id = v_signal_id;
   if v_snapshot_id is null then
+    select signal_id into v_duplicate_of_signal_id
+    from snapshots
+    where content_hash = p_content_hash and signal_id <> v_signal_id
+    order by captured_at asc
+    limit 1;
     insert into snapshots (signal_id, captured_at, raw_content, content_hash)
-    values (v_signal_id, now(), p_raw_content, p_content_hash)
+    values (v_signal_id, p_captured_at, p_raw_content, p_content_hash)
     returning id into v_snapshot_id;
-    update signals set snapshot_id = v_snapshot_id where id = v_signal_id;
+    update signals
+    set snapshot_id = v_snapshot_id,
+        duplicate_of_signal_id = v_duplicate_of_signal_id
+    where id = v_signal_id;
   end if;
   return v_signal_id;
 end;
+$$;
+
+create function record_source_run(
+  p_source_key text,
+  p_signal_count integer,
+  p_status text,
+  p_detail text default null
+) returns void language plpgsql as $$
+declare v_source_id uuid;
+begin
+  select id into v_source_id from sources where source_key = p_source_key;
+  if v_source_id is null then raise exception 'configured source % does not exist', p_source_key; end if;
+  insert into source_run_metrics (source_id, signal_count, status, detail)
+  values (v_source_id, p_signal_count, p_status, p_detail);
+end;
+$$;
+
+create function recent_source_counts(p_source_key text, p_limit integer default 10)
+returns table (signal_count integer) language sql stable as $$
+  select metric.signal_count
+  from source_run_metrics metric
+  join sources source on source.id = metric.source_id
+  where source.source_key = p_source_key and metric.status = 'success'
+  order by metric.collected_at desc
+  limit p_limit;
 $$;
