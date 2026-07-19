@@ -48,7 +48,6 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         type=SourceType.RSS,
         url="https://www.rbi.org.in/pressreleases_rss.xml",
         trust_category=TrustCategory.OFFICIAL,
-        enabled=False,
     ),
     SourceDefinition(
         key="indian-express-india",

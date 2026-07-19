@@ -82,3 +82,13 @@ See [`docs/source_research.md`](docs/source_research.md) for the current multi-s
 ## Phase gates
 
 See [`docs/mission_ethics.md`](docs/mission_ethics.md) and [`docs/phase0_phase1_checklist.md`](docs/phase0_phase1_checklist.md). Do not move to Phase 2 AI/clustering until Phase 1 has several reliable official and independent enabled sources with clean snapshots and source-run metrics.
+
+## Private Phase 2 report
+
+After enabled sources have been persisted, build the first private candidate-topic report:
+
+```powershell
+python -m pipeline.topic_report --signals 300 --topics 10
+```
+
+This is deterministic entity matching and grouping only. It does not call Gemini and does not publish case files.

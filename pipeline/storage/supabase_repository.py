@@ -3,6 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
@@ -71,6 +72,17 @@ class SupabaseRepository:
             return {}
         return result[0]
 
+    def recent_signals(self, limit: int = 250) -> list[dict]:
+        query = urlencode(
+            {
+                "select": "id,published_at,title,raw_text,transcript,url,duplicate_of_signal_id,sources(source_key,trust_category)",
+                "order": "published_at.desc",
+                "limit": str(limit),
+            }
+        )
+        result = self._get(f"signals?{query}")
+        return result if isinstance(result, list) else []
+
     def _rpc(self, function_name: str, payload: dict) -> object:
         """Call one trusted SQL RPC function using the service role."""
         request = Request(
@@ -78,6 +90,16 @@ class SupabaseRepository:
             data=json.dumps(payload).encode("utf-8"),
             headers={"apikey": self.service_role_key, "Authorization": f"Bearer {self.service_role_key}", "Content-Type": "application/json"},
             method="POST",
+        )
+        with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
+            raw = response.read().decode("utf-8").strip()
+            return json.loads(raw) if raw else None
+
+    def _get(self, path: str) -> object:
+        request = Request(
+            f"{self.url.rstrip('/')}/rest/v1/{path}",
+            headers={"apikey": self.service_role_key, "Authorization": f"Bearer {self.service_role_key}"},
+            method="GET",
         )
         with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
             raw = response.read().decode("utf-8").strip()

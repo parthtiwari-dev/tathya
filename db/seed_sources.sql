@@ -4,7 +4,7 @@ insert into sources (source_key, name, type, url, trust_category, enabled) value
   ('pmo-youtube', 'PMO India - YouTube', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCDS9hpqUEXsXUIcf0qDcBIA', 'official', false),
   ('pmindia-news-updates', 'Prime Minister of India - News Updates', 'official_website', 'https://www.pmindia.gov.in/en/news-updates/', 'official', false),
   ('income-tax-press-releases', 'Income Tax Department - Press Releases', 'rss', 'https://www.incometaxindia.gov.in/press-release-rss-feed/-/asset_publisher/bxhj/rss', 'official', false),
-  ('rbi-press-releases', 'Reserve Bank of India - Press Releases', 'rss', 'https://www.rbi.org.in/pressreleases_rss.xml', 'official', false),
+  ('rbi-press-releases', 'Reserve Bank of India - Press Releases', 'rss', 'https://www.rbi.org.in/pressreleases_rss.xml', 'official', true),
   ('indian-express-india', 'The Indian Express - India', 'rss', 'https://indianexpress.com/section/india/feed/', 'media', true),
   ('hindustan-times-india', 'Hindustan Times - India', 'rss', 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', 'media', true),
   ('the-wire', 'The Wire', 'rss', 'https://thewire.in/feed/', 'media', false),

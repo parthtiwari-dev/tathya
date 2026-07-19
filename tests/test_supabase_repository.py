@@ -68,3 +68,27 @@ def test_source_activation_rpcs(monkeypatch) -> None:
         ("set_source_enabled", {"p_source_key": "source", "p_enabled": True}),
         ("source_activation_summary", {"p_source_key": "source"}),
     ]
+
+
+def test_recent_signals_gets_joined_source_rows(monkeypatch) -> None:
+    class Response:
+        def read(self) -> bytes:
+            return b'[{"id":"1","sources":{"source_key":"rbi-press-releases"}}]'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+    def fake_urlopen(request, timeout):
+        assert request.full_url.startswith("https://project.supabase.co/rest/v1/signals?")
+        assert "sources%28source_key%2Ctrust_category%29" in request.full_url
+        assert request.get_header("Authorization") == "Bearer test-key"
+        assert timeout == 30
+        return Response()
+
+    monkeypatch.setattr(supabase_repository, "urlopen", fake_urlopen)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    assert repository.recent_signals(5)[0]["sources"]["source_key"] == "rbi-press-releases"

@@ -22,6 +22,8 @@ insert into entities (name, type, aliases) values
   ('Lok Sabha', 'ministry', '["House of the People", "Lower House"]'::jsonb),
   ('Rajya Sabha', 'ministry', '["Council of States", "Upper House"]'::jsonb),
   ('Press Information Bureau', 'ministry', '["PIB"]'::jsonb),
+  ('Reserve Bank of India', 'ministry', '["RBI", "Central Bank"]'::jsonb),
+  ('Income Tax Department', 'ministry', '["Income Tax", "IT Department"]'::jsonb),
   ('Pradhan Mantri Jan Dhan Yojana', 'scheme', '["PMJDY", "Jan Dhan Yojana"]'::jsonb),
   ('Ayushman Bharat', 'scheme', '["PM-JAY", "Pradhan Mantri Jan Arogya Yojana"]'::jsonb),
   ('Pradhan Mantri Awas Yojana', 'scheme', '["PMAY"]'::jsonb),
