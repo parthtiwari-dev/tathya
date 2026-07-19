@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 
 import feedparser
 
+from pipeline.processing.text_cleaner import clean_source_text
 from shared.models import IngestedSignal, SourceDefinition, SourceType
 
 
@@ -24,7 +25,7 @@ def parse_rss_entries(source: SourceDefinition, payload: bytes) -> list[Ingested
             continue
         published = entry.get("published_parsed") or entry.get("updated_parsed")
         published_at = _to_datetime(published) if published else datetime.now(UTC)
-        signals.append(IngestedSignal(source_key=source.key, source_url=source.url, canonical_url=link, published_at=published_at, raw_text=text, title=entry.get("title")))
+        signals.append(IngestedSignal(source_key=source.key, source_url=source.url, canonical_url=link, published_at=published_at, raw_text=clean_source_text(text), title=clean_source_text(entry.get("title")) or None))
     return signals
 
 

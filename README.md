@@ -143,3 +143,25 @@ Search embedded signals:
 ```powershell
 python -m pipeline.semantic_search "Sonam Wangchuk Parliament march" --limit 10
 ```
+
+## Grounded generation and audit
+
+Install optional Gemini generation dependencies:
+
+```powershell
+python -m pip install -e ".[generation]"
+```
+
+Generate private grounded JSON drafts:
+
+```powershell
+python -m pipeline.gemini_case_file_report --signals 300 --topics 3
+```
+
+Export rows for the mandatory Phase 3 manual audit:
+
+```powershell
+python -m pipeline.audit_export --target claims --limit 50 > audit_claims.csv
+python -m pipeline.audit_export --target events --limit 50 > audit_events.csv
+python -m pipeline.audit_export --target facts --limit 50 > audit_facts.csv
+```

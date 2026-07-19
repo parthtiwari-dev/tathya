@@ -110,6 +110,10 @@ class SupabaseRepository:
         )
         return result if isinstance(result, list) else []
 
+    def get_table_rows(self, path: str) -> list[dict]:
+        result = self._get(path)
+        return result if isinstance(result, list) else []
+
     def mark_signal_duplicate(self, duplicate_signal_id: str, canonical_signal_id: str) -> None:
         self._rpc(
             "mark_signal_duplicate",

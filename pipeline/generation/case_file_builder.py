@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import re
 
 from pipeline.processing.clusterer import TopicCluster, signal_text
+from pipeline.processing.text_cleaner import clean_source_text
 
 
 @dataclass(frozen=True)
@@ -121,8 +122,7 @@ def _facts(rows: list[dict]) -> list[DraftFact]:
 
 
 def _first_sentence(row: dict) -> str:
-    text = signal_text(row)
-    text = " ".join(text.split())
+    text = clean_source_text(signal_text(row))
     if not text:
         return ""
     parts = re.split(r"(?<=[.!?])\s+", text)

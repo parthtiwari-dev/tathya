@@ -1,11 +1,14 @@
 """Sentence-transformers embedding utilities for Phase 2 semantic retrieval."""
 
+from pipeline.processing.text_cleaner import clean_source_text
+
+
 MODEL_NAME = "intfloat/multilingual-e5-base"
 EMBEDDING_DIMENSION = 768
 
 
 def signal_text(row: dict) -> str:
-    return " ".join(part for part in [row.get("title"), row.get("raw_text"), row.get("transcript")] if part).strip()
+    return clean_source_text(" ".join(part for part in [row.get("title"), row.get("raw_text"), row.get("transcript")] if part))
 
 
 def passage_text(row: dict) -> str:

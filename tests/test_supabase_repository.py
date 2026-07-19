@@ -117,6 +117,13 @@ def test_embedding_repository_methods(monkeypatch) -> None:
     ]
 
 
+def test_get_table_rows_returns_list(monkeypatch) -> None:
+    monkeypatch.setattr(SupabaseRepository, "_get", lambda _self, path: [{"id": "1"}])
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    assert repository.get_table_rows("claims?limit=1") == [{"id": "1"}]
+
+
 def test_mark_signal_duplicate_rpc(monkeypatch) -> None:
     calls = []
 

@@ -58,9 +58,9 @@ def test_parse_rss_entries_prefers_full_content_when_available() -> None:
       xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
       <item><title>Short title</title><link>https://example.gov/a</link>
       <description>Short summary.</description>
-      <content:encoded>Longer official body text.</content:encoded></item>
+      <content:encoded><![CDATA[<table><tr><td>Longer &amp; official body text.</td></tr></table>]]></content:encoded></item>
     </channel></rss>'''
 
     signals = parse_rss_entries(source, payload)
 
-    assert signals[0].raw_text == "Longer official body text."
+    assert signals[0].raw_text == "Longer & official body text."
