@@ -27,6 +27,9 @@ def test_case_file_persist_writes_cluster_drafts(monkeypatch, capsys) -> None:
             persisted.append((draft.title, signal_ids))
             return "topic-id"
 
+        def persist_topic_relation(self, topic_id_a, topic_id_b, relation_type):
+            raise AssertionError("Only one topic is persisted in this test")
+
     monkeypatch.setattr(case_file_persist, "SupabaseRepository", Repository)
 
     assert case_file_persist.main(["--signals", "10", "--topics", "1"]) == 0
@@ -55,6 +58,9 @@ def test_case_file_persist_can_skip_non_promotable(monkeypatch, capsys) -> None:
 
         def persist_case_file_draft(self, draft, signal_ids):
             raise AssertionError("Should not persist non-promotable clusters")
+
+        def persist_topic_relation(self, topic_id_a, topic_id_b, relation_type):
+            raise AssertionError("No topics should be related when persistence is skipped")
 
     monkeypatch.setattr(case_file_persist, "SupabaseRepository", Repository)
 

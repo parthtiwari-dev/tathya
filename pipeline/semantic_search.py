@@ -2,11 +2,13 @@
 
 import argparse
 
+from pipeline.cli_encoding import ensure_utf8_stdout
 from pipeline.processing.embedder import LocalEmbedder, vector_literal
 from pipeline.storage.supabase_repository import SupabaseRepository
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_stdout()
     parser = argparse.ArgumentParser(description="Search embedded signals semantically.")
     parser.add_argument("query", help="Search query text.")
     parser.add_argument("--limit", type=int, default=10, help="Results to show.")

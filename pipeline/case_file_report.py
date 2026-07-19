@@ -4,12 +4,14 @@ import argparse
 import json
 from dataclasses import asdict
 
+from pipeline.cli_encoding import ensure_utf8_stdout
 from pipeline.generation.case_file_builder import build_case_file_draft
 from pipeline.processing.clusterer import cluster_signals
 from pipeline.storage.supabase_repository import SupabaseRepository
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_stdout()
     parser = argparse.ArgumentParser(description="Build private extractive case-file drafts from recent signals.")
     parser.add_argument("--signals", type=int, default=300, help="Recent persisted signals to inspect.")
     parser.add_argument("--topics", type=int, default=5, help="Draft case files to print.")

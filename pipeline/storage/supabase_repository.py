@@ -114,6 +114,41 @@ class SupabaseRepository:
         result = self._get(path)
         return result if isinstance(result, list) else []
 
+    def list_topics(self, limit: int = 20) -> list[dict]:
+        query = urlencode(
+            {
+                "select": "id,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at",
+                "order": "last_signal_at.desc",
+                "limit": str(limit),
+            }
+        )
+        return self.get_table_rows(f"topics?{query}")
+
+    def topic_detail(self, topic_id: str) -> dict:
+        topic = self.get_table_rows(f"topics?{urlencode({'id': f'eq.{topic_id}', 'select': '*'})}")
+        claims = self.get_table_rows(
+            f"claims?{urlencode({'topic_id': f'eq.{topic_id}', 'select': '*', 'order': 'created_at.asc'})}"
+        )
+        events = self.get_table_rows(
+            f"events?{urlencode({'topic_id': f'eq.{topic_id}', 'select': '*', 'order': 'event_date.asc'})}"
+        )
+        facts = self.get_table_rows(
+            f"verifiable_facts?{urlencode({'topic_id': f'eq.{topic_id}', 'select': '*', 'order': 'created_at.asc'})}"
+        )
+        relations_a = self.get_table_rows(
+            f"topic_relations?{urlencode({'topic_id_a': f'eq.{topic_id}', 'select': '*'})}"
+        )
+        relations_b = self.get_table_rows(
+            f"topic_relations?{urlencode({'topic_id_b': f'eq.{topic_id}', 'select': '*'})}"
+        )
+        return {
+            "topic": topic[0] if topic else None,
+            "claims": claims,
+            "events": events,
+            "verifiable_facts": facts,
+            "relations": [*relations_a, *relations_b],
+        }
+
     def mark_signal_duplicate(self, duplicate_signal_id: str, canonical_signal_id: str) -> None:
         self._rpc(
             "mark_signal_duplicate",
@@ -122,6 +157,31 @@ class SupabaseRepository:
                 "p_canonical_signal_id": canonical_signal_id,
             },
         )
+
+    def persist_topic_relation(self, topic_id_a: str, topic_id_b: str, relation_type: str) -> str | None:
+        result = self._rpc(
+            "upsert_topic_relation",
+            {
+                "p_topic_id_a": topic_id_a,
+                "p_topic_id_b": topic_id_b,
+                "p_relation_type": relation_type,
+            },
+        )
+        return result if isinstance(result, str) else None
+
+    def create_correction(self, target_table: str, target_row_id: str, issue_description: str) -> dict:
+        rows = self._post(
+            "corrections",
+            {
+                "target_table": target_table,
+                "target_row_id": target_row_id,
+                "issue_description": issue_description,
+            },
+            prefer="return=representation",
+        )
+        if not isinstance(rows, list) or not rows:
+            raise RuntimeError("Correction report was not created")
+        return rows[0]
 
     def persist_case_file_draft(self, draft: CaseFileDraft, signal_ids: list[str]) -> str:
         topic_id = self._rpc(
@@ -186,6 +246,24 @@ class SupabaseRepository:
             f"{self.url.rstrip('/')}/rest/v1/{path}",
             headers={"apikey": self.service_role_key, "Authorization": f"Bearer {self.service_role_key}"},
             method="GET",
+        )
+        with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
+            raw = response.read().decode("utf-8").strip()
+            return json.loads(raw) if raw else None
+
+    def _post(self, path: str, payload: dict, prefer: str | None = None) -> object:
+        headers = {
+            "apikey": self.service_role_key,
+            "Authorization": f"Bearer {self.service_role_key}",
+            "Content-Type": "application/json",
+        }
+        if prefer:
+            headers["Prefer"] = prefer
+        request = Request(
+            f"{self.url.rstrip('/')}/rest/v1/{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
         )
         with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
             raw = response.read().decode("utf-8").strip()

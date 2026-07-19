@@ -26,6 +26,7 @@ create function reject_snapshot_mutation() returns trigger language plpgsql as $
 create trigger snapshots_no_update before update or delete on snapshots for each row execute function reject_snapshot_mutation();
 create index signals_source_published_idx on signals (source_id, published_at desc);
 create index signals_canonical_idx on signals (duplicate_of_signal_id) where duplicate_of_signal_id is null;
+create unique index topics_title_idx on topics (title);
 create index topics_live_updated_idx on topics (status, last_signal_at desc);
 create index claims_topic_idx on claims (topic_id, created_at);
 create index events_topic_date_idx on events (topic_id, event_date);
@@ -263,6 +264,38 @@ begin
   set quoted_span = excluded.quoted_span
   returning id into v_fact_id;
   return v_fact_id;
+end;
+$$;
+
+create function upsert_topic_relation(
+  p_topic_id_a uuid,
+  p_topic_id_b uuid,
+  p_relation_type relation_type
+) returns uuid language plpgsql as $$
+declare
+  v_relation_id uuid;
+  v_a uuid;
+  v_b uuid;
+begin
+  if p_topic_id_a = p_topic_id_b then
+    raise exception 'a topic cannot relate to itself';
+  end if;
+
+  if p_topic_id_a < p_topic_id_b then
+    v_a := p_topic_id_a;
+    v_b := p_topic_id_b;
+  else
+    v_a := p_topic_id_b;
+    v_b := p_topic_id_a;
+  end if;
+
+  insert into topic_relations (topic_id_a, topic_id_b, relation_type)
+  values (v_a, v_b, p_relation_type)
+  on conflict (topic_id_a, topic_id_b, relation_type) do update
+  set relation_type = excluded.relation_type
+  returning id into v_relation_id;
+
+  return v_relation_id;
 end;
 $$;
 

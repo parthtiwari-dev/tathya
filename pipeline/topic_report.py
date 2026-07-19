@@ -2,11 +2,13 @@
 
 import argparse
 
+from pipeline.cli_encoding import ensure_utf8_stdout
 from pipeline.processing.clusterer import cluster_signals
 from pipeline.storage.supabase_repository import SupabaseRepository
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_stdout()
     parser = argparse.ArgumentParser(description="Build a private candidate-topic report from recent signals.")
     parser.add_argument("--signals", type=int, default=250, help="Recent persisted signals to inspect.")
     parser.add_argument("--topics", type=int, default=10, help="Candidate topics to print.")

@@ -124,6 +124,45 @@ def test_get_table_rows_returns_list(monkeypatch) -> None:
     assert repository.get_table_rows("claims?limit=1") == [{"id": "1"}]
 
 
+def test_topic_api_repository_helpers(monkeypatch) -> None:
+    paths = []
+
+    def fake_get(self, path):
+        paths.append(path)
+        return [{"id": "topic-id"}]
+
+    monkeypatch.setattr(SupabaseRepository, "_get", fake_get)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    assert repository.list_topics(3) == [{"id": "topic-id"}]
+    detail = repository.topic_detail("topic-id")
+
+    assert detail["topic"]["id"] == "topic-id"
+    assert paths[0].startswith("topics?")
+    assert any(path.startswith("claims?") for path in paths)
+
+
+def test_correction_and_relation_repository_helpers(monkeypatch) -> None:
+    calls = []
+
+    def fake_rpc(self, function_name, payload):
+        calls.append((function_name, payload))
+        return "relation-id"
+
+    def fake_post(self, path, payload, prefer=None):
+        calls.append((path, payload, prefer))
+        return [{"id": "correction-id"}]
+
+    monkeypatch.setattr(SupabaseRepository, "_rpc", fake_rpc)
+    monkeypatch.setattr(SupabaseRepository, "_post", fake_post)
+    repository = SupabaseRepository("https://project.supabase.co", "test-key")
+
+    assert repository.persist_topic_relation("a", "b", "related") == "relation-id"
+    assert repository.create_correction("claims", "claim-id", "bad quote")["id"] == "correction-id"
+    assert calls[0][0] == "upsert_topic_relation"
+    assert calls[1][0] == "corrections"
+
+
 def test_mark_signal_duplicate_rpc(monkeypatch) -> None:
     calls = []
 
