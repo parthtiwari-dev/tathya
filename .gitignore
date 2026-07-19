@@ -216,3 +216,47 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+
+# Environment variables — never commit real keys
+.env
+.env.local
+.env.*.local
+*.env
+
+# Python (pipeline/, api/)
+__pycache__/
+*.py[cod]
+venv/
+env/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node / Next.js (apps/web/)
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# Supabase local dev
+.supabase/
+/docs/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
