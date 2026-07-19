@@ -44,3 +44,23 @@ def test_fetch_rss_signals_uses_a_transparent_identifying_user_agent(monkeypatch
 
     monkeypatch.setattr(rss_watcher, "urlopen", fake_urlopen)
     assert rss_watcher.fetch_rss_signals(source) == []
+
+
+def test_parse_rss_entries_prefers_full_content_when_available() -> None:
+    source = SourceDefinition(
+        key="official-feed",
+        name="Official feed",
+        type=SourceType.RSS,
+        url="https://example.gov/feed.xml",
+        trust_category=TrustCategory.OFFICIAL,
+    )
+    payload = b'''<?xml version="1.0"?><rss version="2.0"
+      xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
+      <item><title>Short title</title><link>https://example.gov/a</link>
+      <description>Short summary.</description>
+      <content:encoded>Longer official body text.</content:encoded></item>
+    </channel></rss>'''
+
+    signals = parse_rss_entries(source, payload)
+
+    assert signals[0].raw_text == "Longer official body text."

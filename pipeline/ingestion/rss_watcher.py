@@ -18,7 +18,7 @@ def parse_rss_entries(source: SourceDefinition, payload: bytes) -> list[Ingested
         raise RuntimeError(f"Could not parse RSS feed for {source.name}: {feed.bozo_exception}")
     signals: list[IngestedSignal] = []
     for entry in feed.entries:
-        text = entry.get("summary") or entry.get("description") or entry.get("title")
+        text = _entry_text(entry)
         link = entry.get("link")
         if not text or not link:
             continue
@@ -37,3 +37,16 @@ def fetch_rss_signals(source: SourceDefinition) -> list[IngestedSignal]:
 
 def _to_datetime(value: struct_time) -> datetime:
     return datetime(*value[:6], tzinfo=UTC)
+
+
+def _entry_text(entry) -> str | None:
+    content_items = entry.get("content") or []
+    content_values = [item.get("value", "") for item in content_items if item.get("value")]
+    return next(
+        (
+            candidate
+            for candidate in [*content_values, entry.get("summary"), entry.get("description"), entry.get("title")]
+            if candidate
+        ),
+        None,
+    )

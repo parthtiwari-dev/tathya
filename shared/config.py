@@ -35,6 +35,22 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         enabled=False,
     ),
     SourceDefinition(
+        key="income-tax-press-releases",
+        name="Income Tax Department - Press Releases",
+        type=SourceType.RSS,
+        url="https://www.incometaxindia.gov.in/press-release-rss-feed/-/asset_publisher/bxhj/rss",
+        trust_category=TrustCategory.OFFICIAL,
+        enabled=False,
+    ),
+    SourceDefinition(
+        key="rbi-press-releases",
+        name="Reserve Bank of India - Press Releases",
+        type=SourceType.RSS,
+        url="https://www.rbi.org.in/pressreleases_rss.xml",
+        trust_category=TrustCategory.OFFICIAL,
+        enabled=False,
+    ),
+    SourceDefinition(
         key="indian-express-india",
         name="The Indian Express - India",
         type=SourceType.RSS,
