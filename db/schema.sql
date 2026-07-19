@@ -28,3 +28,41 @@ create index signals_canonical_idx on signals (duplicate_of_signal_id) where dup
 create index topics_live_updated_idx on topics (status, last_signal_at desc);
 create index claims_topic_idx on claims (topic_id, created_at);
 create index events_topic_date_idx on events (topic_id, event_date);
+
+-- Atomically write one raw signal and its immutable snapshot. The function is
+-- idempotent per source URL, so re-running a watcher cannot create duplicates.
+create function record_signal_snapshot(
+  p_source_key text,
+  p_published_at timestamptz,
+  p_title text,
+  p_raw_text text,
+  p_transcript text,
+  p_url text,
+  p_raw_content text,
+  p_content_hash char(64)
+) returns uuid language plpgsql as $$
+declare
+  v_source_id uuid;
+  v_signal_id uuid;
+  v_snapshot_id uuid;
+begin
+  select id into v_source_id from sources where source_key = p_source_key and enabled;
+  if v_source_id is null then
+    raise exception 'configured source % does not exist or is disabled', p_source_key;
+  end if;
+
+  insert into signals (source_id, published_at, title, raw_text, transcript, url)
+  values (v_source_id, p_published_at, p_title, p_raw_text, p_transcript, p_url)
+  on conflict (source_id, url) do update set url = excluded.url
+  returning id into v_signal_id;
+
+  select id into v_snapshot_id from snapshots where signal_id = v_signal_id;
+  if v_snapshot_id is null then
+    insert into snapshots (signal_id, captured_at, raw_content, content_hash)
+    values (v_signal_id, now(), p_raw_content, p_content_hash)
+    returning id into v_snapshot_id;
+    update signals set snapshot_id = v_snapshot_id where id = v_signal_id;
+  end if;
+  return v_signal_id;
+end;
+$$;
