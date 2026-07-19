@@ -2,12 +2,12 @@
 
 import argparse
 
-from pipeline.ingestion.rss_watcher import fetch_rss_signals
+from pipeline.ingestion.dispatcher import fetch_signals
 from pipeline.processing.snapshotter import build_snapshot
 from pipeline.monitoring.health_check import assess_signal_count
+from pipeline.monitoring.telegram import send_alert
 from pipeline.storage.supabase_repository import SupabaseRepository
 from shared.config import STARTER_SOURCES
-from shared.models import SourceType
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -18,14 +18,15 @@ def main(argv: list[str] | None = None) -> int:
     total = 0
     failed_sources = 0
     for source in STARTER_SOURCES:
-        if not source.enabled or source.type is not SourceType.RSS:
+        if not source.enabled:
             continue
         try:
-            signals = fetch_rss_signals(source)
+            signals = fetch_signals(source)
         except Exception as error:  # A broken source must not stop all other watchers.
             failed_sources += 1
             if repository:
                 repository.record_source_run(source.key, 0, "failure", str(error))
+            send_alert(f"Tathya watcher failed: {source.key}\n{error}")
             print(f"{source.key}: FAILED ({error})")
             continue
         assessment = assess_signal_count(source.key, len(signals), repository.recent_source_counts(source.key) if repository else [])
@@ -39,7 +40,9 @@ def main(argv: list[str] | None = None) -> int:
         if repository:
             repository.record_source_run(source.key, len(signals), "success")
         if assessment.is_abnormal_drop:
-            print(f"ALERT {source.key}: {len(signals)} signals vs recent median {assessment.baseline_count:g}")
+            message = f"Tathya source alert: {source.key} produced {len(signals)} signals vs recent median {assessment.baseline_count:g}"
+            print(f"ALERT {message}")
+            send_alert(message)
         total += len(signals)
     verb = "persisted" if repository else "prepared"
     print(f"Total signals {verb}: {total}")

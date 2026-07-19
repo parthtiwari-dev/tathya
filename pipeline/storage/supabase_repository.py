@@ -50,7 +50,8 @@ class SupabaseRepository:
             method="POST",
         )
         with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
-            return json.loads(response.read().decode("utf-8"))
+            raw = response.read().decode("utf-8").strip()
+            return json.loads(raw) if raw else None
 
     def recent_source_counts(self, source_key: str) -> list[int]:
         payload = {"p_source_key": source_key, "p_limit": 10}
@@ -69,4 +70,5 @@ class SupabaseRepository:
             method="POST",
         )
         with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
-            return json.loads(response.read().decode("utf-8"))
+            raw = response.read().decode("utf-8").strip()
+            return json.loads(raw) if raw else None

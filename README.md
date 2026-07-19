@@ -37,9 +37,13 @@ This calls the database's atomic `record_signal_snapshot` function. Re-running i
 
 Each persisted run also records its source count. After three successful historical runs, a run below 20% of its recent median is printed as an alert; Telegram delivery is the remaining deployment integration.
 
+PIB, Lok Sabha, Rajya Sabha, and YouTube now have source-specific adapters. They remain disabled in `shared/config.py` until their live endpoints/channels are validated; enabling a configured source automatically selects its correct adapter.
+
 ## Scheduled ingestion
 
 [`ingest.yml`](.github/workflows/ingest.yml) runs enabled sources every six hours after you add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub repository secrets. It can also be run manually from the Actions tab.
+
+Optional source-failure and low-volume alerts need `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` added as GitHub repository secrets (and, for local runs, to `.env`).
 
 ## RSS sources
 
