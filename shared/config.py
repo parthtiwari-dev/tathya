@@ -1,7 +1,9 @@
 """Phase 0 source registry.
 
 Only source configuration belongs here; topics must never be added manually.
-The initial endpoints are publisher-exposed feeds verified on 19 July 2026.
+Endpoints below are source-level watch points. Most are deliberately disabled
+until their adapter, terms posture, timestamps, and snapshots are manually
+verified.
 """
 
 from shared.models import SourceDefinition, SourceType, TrustCategory
@@ -10,18 +12,34 @@ from shared.models import SourceDefinition, SourceType, TrustCategory
 STARTER_SOURCES: tuple[SourceDefinition, ...] = (
     SourceDefinition(
         key="pib-press-releases",
-        name="Press Information Bureau — Press Releases",
+        name="Press Information Bureau - Press Releases",
         type=SourceType.PIB,
-        url="https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=5",
+        url="https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1",
+        trust_category=TrustCategory.OFFICIAL,
+        enabled=False,
+    ),
+    SourceDefinition(
+        key="pmo-youtube",
+        name="PMO India - YouTube",
+        type=SourceType.YOUTUBE,
+        url="https://www.youtube.com/feeds/videos.xml?channel_id=UCDS9hpqUEXsXUIcf0qDcBIA",
         trust_category=TrustCategory.OFFICIAL,
         enabled=False,
     ),
     SourceDefinition(
         key="indian-express-india",
-        name="The Indian Express — India",
+        name="The Indian Express - India",
         type=SourceType.RSS,
         url="https://indianexpress.com/section/india/feed/",
         trust_category=TrustCategory.MEDIA,
+    ),
+    SourceDefinition(
+        key="hindustan-times-india",
+        name="Hindustan Times - India",
+        type=SourceType.RSS,
+        url="https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
+        trust_category=TrustCategory.MEDIA,
+        enabled=False,
     ),
     SourceDefinition(
         key="the-wire",
@@ -29,32 +47,51 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         type=SourceType.RSS,
         url="https://thewire.in/feed/",
         trust_category=TrustCategory.MEDIA,
-        # The publisher currently returns non-feed content to the transparent
-        # watcher user-agent. Keep it registered but do not poll it until the
-        # dedicated source adapter has a compliant resolution.
+        enabled=False,
+    ),
+    SourceDefinition(
+        key="scroll-in",
+        name="Scroll.in",
+        type=SourceType.RSS,
+        url="https://scroll.in/latest.rss",
+        trust_category=TrustCategory.MEDIA,
         enabled=False,
     ),
     SourceDefinition(
         key="ndtv-india",
-        name="NDTV — India",
+        name="NDTV - India",
         type=SourceType.RSS,
         url="https://feeds.feedburner.com/ndtvnews-india-news",
         trust_category=TrustCategory.MEDIA,
-        # Publisher terms require a licensing/use review before public reuse.
+        enabled=False,
+    ),
+    SourceDefinition(
+        key="times-of-india-india",
+        name="Times of India - India",
+        type=SourceType.RSS,
+        url="https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",
+        trust_category=TrustCategory.MEDIA,
         enabled=False,
     ),
     SourceDefinition(
         key="guardian-world",
-        name="The Guardian — World",
+        name="The Guardian - World",
         type=SourceType.RSS,
         url="https://www.theguardian.com/world/rss",
         trust_category=TrustCategory.FOREIGN,
-        # Public snapshotting requires a licensing/use review.
+        enabled=False,
+    ),
+    SourceDefinition(
+        key="bbc-world",
+        name="BBC News - World",
+        type=SourceType.RSS,
+        url="http://feeds.bbci.co.uk/news/world/rss.xml",
+        trust_category=TrustCategory.FOREIGN,
         enabled=False,
     ),
     SourceDefinition(
         key="lok-sabha-questions",
-        name="Lok Sabha — Questions and Answers",
+        name="Lok Sabha - Questions and Answers",
         type=SourceType.PARLIAMENT,
         url="https://sansad.in/ls/questions/questions-and-answers",
         trust_category=TrustCategory.OFFICIAL,
@@ -62,11 +99,12 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
     ),
     SourceDefinition(
         key="rajya-sabha-questions",
-        name="Rajya Sabha — Questions and Answers",
+        name="Rajya Sabha - Questions and Answers",
         type=SourceType.PARLIAMENT,
         url="https://sansad.in/rs/questions/questions-and-answers",
         trust_category=TrustCategory.OFFICIAL,
         enabled=False,
     ),
 )
+
 ARCHIVE_AFTER_DAYS = 60

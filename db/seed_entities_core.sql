@@ -1,0 +1,32 @@
+-- Phase 0 core entity seed. Re-running this is safe.
+-- This is a starter spine only; the wider minister/MP list should be generated
+-- from Wikidata/official records before Phase 2 entity resolution is treated as complete.
+insert into entities (name, type, aliases) values
+  ('Government of India', 'ministry', '["Union Government", "Central Government", "Centre"]'::jsonb),
+  ('Prime Minister''s Office', 'ministry', '["PMO", "PMO India", "Prime Minister Office"]'::jsonb),
+  ('Ministry of Home Affairs', 'ministry', '["MHA", "Home Ministry"]'::jsonb),
+  ('Ministry of Finance', 'ministry', '["Finance Ministry", "MoF"]'::jsonb),
+  ('Ministry of External Affairs', 'ministry', '["MEA", "External Affairs Ministry"]'::jsonb),
+  ('Ministry of Defence', 'ministry', '["Defence Ministry", "MoD"]'::jsonb),
+  ('Ministry of Agriculture and Farmers Welfare', 'ministry', '["Agriculture Ministry"]'::jsonb),
+  ('Ministry of Education', 'ministry', '["Education Ministry", "MoE"]'::jsonb),
+  ('Ministry of Health and Family Welfare', 'ministry', '["Health Ministry", "MoHFW"]'::jsonb),
+  ('Ministry of Electronics and Information Technology', 'ministry', '["MeitY", "IT Ministry"]'::jsonb),
+  ('Ministry of Information and Broadcasting', 'ministry', '["I&B Ministry", "MIB"]'::jsonb),
+  ('Ministry of Railways', 'ministry', '["Railway Ministry", "Indian Railways"]'::jsonb),
+  ('Ministry of Road Transport and Highways', 'ministry', '["MoRTH", "Road Transport Ministry"]'::jsonb),
+  ('Ministry of Rural Development', 'ministry', '["Rural Development Ministry", "MoRD"]'::jsonb),
+  ('Ministry of Women and Child Development', 'ministry', '["WCD Ministry"]'::jsonb),
+  ('Ministry of Law and Justice', 'ministry', '["Law Ministry"]'::jsonb),
+  ('Ministry of Environment, Forest and Climate Change', 'ministry', '["MoEFCC", "Environment Ministry"]'::jsonb),
+  ('Lok Sabha', 'ministry', '["House of the People", "Lower House"]'::jsonb),
+  ('Rajya Sabha', 'ministry', '["Council of States", "Upper House"]'::jsonb),
+  ('Press Information Bureau', 'ministry', '["PIB"]'::jsonb),
+  ('Pradhan Mantri Jan Dhan Yojana', 'scheme', '["PMJDY", "Jan Dhan Yojana"]'::jsonb),
+  ('Ayushman Bharat', 'scheme', '["PM-JAY", "Pradhan Mantri Jan Arogya Yojana"]'::jsonb),
+  ('Pradhan Mantri Awas Yojana', 'scheme', '["PMAY"]'::jsonb),
+  ('Mahatma Gandhi National Rural Employment Guarantee Act', 'law', '["MGNREGA", "NREGA"]'::jsonb),
+  ('Digital Personal Data Protection Act, 2023', 'law', '["DPDP Act", "Digital Personal Data Protection Act"]'::jsonb),
+  ('Information Technology Act, 2000', 'law', '["IT Act", "Information Technology Act"]'::jsonb)
+on conflict (name, type) do update
+set aliases = excluded.aliases;

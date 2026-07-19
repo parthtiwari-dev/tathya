@@ -4,7 +4,7 @@ Tathya (तथ्य, “fact”) is an autonomous, non-partisan record of India
 
 ## Current foundation
 
-This foundation now provides the project layout, typed pipeline models, an immutable snapshot builder, the Supabase/Postgres schema, a source registry, and a dry-run ingestion command. It does **not** yet write to Supabase.
+This foundation now provides the project layout, typed pipeline models, an immutable snapshot builder, the Supabase/Postgres schema, a source registry, dry-run ingestion, Supabase persistence, source-health metrics, and Telegram test alerts.
 
 ## Run locally
 
@@ -22,7 +22,7 @@ python -m pipeline.scheduler
 ## Database setup
 
 1. Create a Supabase project.
-2. In its SQL Editor, run [`db/schema.sql`](db/schema.sql), then [`db/seed_sources.sql`](db/seed_sources.sql).
+2. In its SQL Editor, run [`db/schema.sql`](db/schema.sql), [`db/seed_sources.sql`](db/seed_sources.sql), then [`db/seed_entities_core.sql`](db/seed_entities_core.sql).
 3. Copy `.env.example` to `.env` and fill in the project URL and service-role key. Keep `.env` private.
 
 The schema makes `snapshots` append-only at the database level; source pages may change or disappear, but a captured source record cannot silently change.
@@ -51,12 +51,24 @@ Verify that Telegram independently of a source failure with:
 python -m pipeline.scheduler --test-alert
 ```
 
-## RSS sources
+## Source activation
 
-The initial registry records PIB press releases, The Indian Express India feed, and The Wire. The scheduler currently polls only the Indian Express feed: PIB needs its dedicated scraper, while The Wire is disabled because it currently does not return a parseable feed to the transparent watcher user-agent. The scheduler fetches, parses, and snapshots feed entries; it never decides which stories matter. Add sources to `shared/config.py`, never individual stories.
+List all configured sources:
+
+```powershell
+python -m pipeline.source_audit --list
+```
+
+Inspect a disabled candidate source without writing to Supabase:
+
+```powershell
+python -m pipeline.source_audit --source hindustan-times-india --limit 10
+```
+
+The scheduler currently polls only enabled sources. Keep candidates disabled until their adapter, timestamp quality, canonical URLs, raw text, snapshots, duplicate behavior, and terms posture are checked. Add sources to `shared/config.py`, never individual stories.
 
 See [`docs/source_research.md`](docs/source_research.md) for the current multi-source activation register and the reason every non-enabled source is held back.
 
-## Before persistence
+## Phase gates
 
-Run the schema after creating Supabase. The next pipeline slice will use the database function `record_signal_snapshot` to atomically persist each signal with its immutable snapshot.
+See [`docs/mission_ethics.md`](docs/mission_ethics.md) and [`docs/phase0_phase1_checklist.md`](docs/phase0_phase1_checklist.md). Do not move to Phase 2 AI/clustering until Phase 1 has several reliable official and independent enabled sources with clean snapshots and source-run metrics.
