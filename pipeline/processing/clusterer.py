@@ -26,8 +26,7 @@ def cluster_signals(signal_rows: list[dict], limit: int = 10) -> list[TopicClust
     for row in signal_rows:
         if row.get("id") in duplicate_ids or row.get("duplicate_of_signal_id"):
             continue
-        text = signal_text(row)
-        matches = match_entities(text)
+        matches = _cluster_entity_matches(row)
         if matches:
             bucket_key = matches[0].name
             for entity in matches:
@@ -52,6 +51,19 @@ def cluster_signals(signal_rows: list[dict], limit: int = 10) -> list[TopicClust
 
 def signal_text(row: dict) -> str:
     return " ".join(part for part in [row.get("title"), row.get("raw_text"), row.get("transcript")] if part)
+
+
+def _cluster_entity_matches(row: dict):
+    """Prefer title entities for media RSS rows to avoid noisy feed body bleed."""
+    title_matches = match_entities(row.get("title") or "")
+    if title_matches:
+        return title_matches
+
+    source = row.get("sources") or {}
+    if source.get("trust_category") == "official":
+        return match_entities(signal_text(row))
+
+    return []
 
 
 def fallback_bucket(row: dict) -> str:
