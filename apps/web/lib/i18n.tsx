@@ -70,6 +70,10 @@ export const dict: Dictionary = {
     en: "We record what was said, who said it, and what's verifiable.",
     hi: "हम दर्ज करते हैं कि क्या कहा गया, किसने कहा, और क्या सत्यापन योग्य है।",
   },
+  filtersButton: { en: "Filters", hi: "फ़िल्टर" },
+  closeFilters: { en: "Close", hi: "बंद करें" },
+  liveSection: { en: "Live", hi: "सक्रिय" },
+  archivedSection: { en: "Archived", hi: "संग्रहीत" },
 };
 
 export function useTranslations() {
