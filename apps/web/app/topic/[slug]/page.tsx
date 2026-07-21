@@ -3,9 +3,13 @@ import { getAllTopics, getTopicBySlug } from "@/lib/mock-data";
 import { relativeTime } from "@/lib/format";
 import { Timeline } from "@/components/Timeline";
 import { ClaimsLedger } from "@/components/ClaimsLedger";
+import { Contradictions } from "@/components/Contradictions";
 import { VerifiableFactsPanel } from "@/components/VerifiableFactsPanel";
+import { OpenQuestions } from "@/components/OpenQuestions";
 import { RelatedTopics } from "@/components/RelatedTopics";
+import { SourcesUsed } from "@/components/SourcesUsed";
 import { TopicHistory } from "@/components/TopicHistory";
+import { TrustBreakdown } from "@/components/TrustBreakdown";
 
 export function generateStaticParams() {
   return getAllTopics().map((topic) => ({ slug: topic.slug }));
@@ -36,11 +40,18 @@ export default async function TopicPage({
 
       <p className="mt-4 text-[17px] leading-relaxed text-ink-secondary">{topic.summary}</p>
 
+      <div className="mt-3">
+        <TrustBreakdown counts={topic.sourceCount} />
+      </div>
+
       <div className="mt-10 space-y-10">
         <Timeline events={topic.events} />
         <ClaimsLedger claims={topic.claims} />
+        <Contradictions items={topic.contradictions} />
         <VerifiableFactsPanel facts={topic.facts} />
+        <OpenQuestions questions={topic.openQuestions} />
         <RelatedTopics relations={topic.relations} />
+        <SourcesUsed claims={topic.claims} />
         <TopicHistory history={topic.history} />
       </div>
     </article>

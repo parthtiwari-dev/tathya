@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { getTopicsByMinistry } from "@/lib/mock-data";
+import { getAllMinistries, getTopicsByMinistry } from "@/lib/mock-data";
 import { FeedItem } from "@/components/FeedItem";
 
-const ministryNames: Record<string, string> = {
-  "home-affairs": "Home Affairs",
-  railways: "Railways",
-  education: "Education",
-};
+export function generateStaticParams() {
+  return getAllMinistries().map((m) => ({ slug: m.slug }));
+}
 
 export default async function MinistryPage({
   params,
@@ -15,7 +13,8 @@ export default async function MinistryPage({
 }) {
   const { slug } = await params;
   const topics = getTopicsByMinistry(slug);
-  const name = ministryNames[slug] ?? slug;
+  const ministry = getAllMinistries().find((m) => m.slug === slug);
+  const name = ministry?.name ?? slug;
 
   return (
     <div className="py-10">

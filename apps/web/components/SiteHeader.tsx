@@ -22,6 +22,9 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-5 text-sm text-ink-secondary">
+          <Link href="/sources" className="hidden transition-colors hover:text-ink sm:inline">
+            Sources
+          </Link>
           <Link href="/about" className="hidden transition-colors hover:text-ink sm:inline">
             About
           </Link>
