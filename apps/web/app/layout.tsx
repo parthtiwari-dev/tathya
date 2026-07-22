@@ -4,7 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { LanguageProvider } from "@/lib/i18n";
-import { CommandK } from "@/components/CommandK";
+import { CommandPalette } from "@/components/CommandPalette";
 
 const plexSerif = IBM_Plex_Serif({
   variable: "--font-plex-serif",
@@ -41,7 +41,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-paper font-sans text-ink antialiased transition-colors duration-200">
         <LanguageProvider>
-          <CommandK />
+          <CommandPalette />
           <SiteHeader />
           <main className="mx-auto max-w-5xl px-4 sm:px-6">{children}</main>
           <SiteFooter />
