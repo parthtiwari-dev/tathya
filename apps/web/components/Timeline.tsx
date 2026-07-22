@@ -1,15 +1,16 @@
 import type { TimelineEvent } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 
-export function Timeline({ events }: { events: TimelineEvent[] }) {
-  if (events.length === 0) return null;
+const heading = { en: "Timeline", hi: "समयरेखा" };
 
+export function Timeline({ events, lang = "en" }: { events: TimelineEvent[]; lang?: "en" | "hi" }) {
+  if (events.length === 0) return null;
   const sorted = [...events].sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   return (
     <section aria-labelledby="timeline-heading">
       <h2 id="timeline-heading" className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-        Timeline
+        {heading[lang]}
       </h2>
       <div className="mt-4 overflow-x-auto">
         <ol className="flex min-w-full gap-6 pb-2">

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n";
+
 type Ministry = { slug: string; name: string };
 
 export function FilterSidebar({
@@ -25,74 +27,76 @@ export function FilterSidebar({
   onDateToChange: (value: string) => void;
   onReset: () => void;
 }) {
+  const t = useTranslations();
   const hasActiveFilters =
     selectedMinistries.length > 0 || selectedStatuses.length > 0 || dateFrom !== "" || dateTo !== "";
 
   return (
-    <aside className="hidden w-56 shrink-0 lg:block">
-      <div className="sticky top-24 space-y-6 text-sm">
-        {hasActiveFilters && (
-          <button onClick={onReset} className="text-xs text-accent hover:underline">
-            Clear all filters
-          </button>
-        )}
+    <div className="space-y-6 text-sm">
+      {hasActiveFilters && (
+        <button onClick={onReset} className="text-xs text-accent hover:underline">
+          {t("clearFilters")}
+        </button>
+      )}
 
-        <FilterSection title="Ministry">
-          <ul className="space-y-1.5">
-            {ministries.map((ministry) => (
-              <li key={ministry.slug}>
-                <label className="flex items-center gap-2 text-ink-secondary">
-                  <input
-                    type="checkbox"
-                    className="accent-[var(--accent)]"
-                    checked={selectedMinistries.includes(ministry.slug)}
-                    onChange={() => onToggleMinistry(ministry.slug)}
-                  />
-                  {ministry.name}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </FilterSection>
+      <FilterSection title={t("filterMinistry")}>
+        <ul className="space-y-1.5">
+          {ministries.map((ministry) => (
+            <li key={ministry.slug}>
+              <label className="flex items-center gap-2 text-ink-secondary">
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={selectedMinistries.includes(ministry.slug)}
+                  onChange={() => onToggleMinistry(ministry.slug)}
+                />
+                {ministry.name}
+              </label>
+            </li>
+          ))}
+        </ul>
+      </FilterSection>
 
-        <FilterSection title="Status">
-          <ul className="space-y-1.5">
-            {["live", "archived"].map((status) => (
-              <li key={status} className="text-ink-secondary">
-                <label className="flex items-center gap-2 capitalize">
-                  <input
-                    type="checkbox"
-                    className="accent-[var(--accent)]"
-                    checked={selectedStatuses.includes(status)}
-                    onChange={() => onToggleStatus(status)}
-                  />
-                  {status}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </FilterSection>
+      <FilterSection title={t("filterStatus")}>
+        <ul className="space-y-1.5">
+          {[
+            { key: "live", label: t("statusLive") },
+            { key: "archived", label: t("statusArchived") },
+          ].map((status) => (
+            <li key={status.key} className="text-ink-secondary">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={selectedStatuses.includes(status.key)}
+                  onChange={() => onToggleStatus(status.key)}
+                />
+                {status.label}
+              </label>
+            </li>
+          ))}
+        </ul>
+      </FilterSection>
 
-        <FilterSection title="Date range">
-          <div className="space-y-2 text-ink-secondary">
-            <label className="block text-xs text-ink-muted">From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => onDateFromChange(e.target.value)}
-              className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
-            />
-            <label className="block text-xs text-ink-muted">To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => onDateToChange(e.target.value)}
-              className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
-            />
-          </div>
-        </FilterSection>
-      </div>
-    </aside>
+      <FilterSection title={t("filterDateRange")}>
+        <div className="space-y-2 text-ink-secondary">
+          <label className="block text-xs text-ink-muted">{t("filterFrom")}</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => onDateFromChange(e.target.value)}
+            className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
+          />
+          <label className="block text-xs text-ink-muted">{t("filterTo")}</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => onDateToChange(e.target.value)}
+            className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
+          />
+        </div>
+      </FilterSection>
+    </div>
   );
 }
 

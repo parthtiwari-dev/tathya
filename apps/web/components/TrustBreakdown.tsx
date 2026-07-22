@@ -1,13 +1,19 @@
 import type { SourceCount } from "@/lib/types";
 
-export function TrustBreakdown({ counts }: { counts: SourceCount }) {
+const labels = {
+  official: { en: "Official", hi: "सरकारी" },
+  media: { en: "Independent media", hi: "स्वतंत्र मीडिया" },
+  citizen: { en: "Citizen", hi: "नागरिक" },
+};
+
+export function TrustBreakdown({ counts, lang = "en" }: { counts: SourceCount; lang?: "en" | "hi" }) {
   const total = counts.official + counts.media + counts.citizen;
   if (total === 0) return null;
 
   const rows = [
-    { label: "Official", value: counts.official },
-    { label: "Independent media", value: counts.media },
-    { label: "Citizen", value: counts.citizen },
+    { label: labels.official[lang], value: counts.official },
+    { label: labels.media[lang], value: counts.media },
+    { label: labels.citizen[lang], value: counts.citizen },
   ].filter((row) => row.value > 0);
 
   return (

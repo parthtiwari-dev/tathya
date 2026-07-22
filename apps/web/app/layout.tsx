@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Serif, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Serif, IBM_Plex_Sans, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { LanguageProvider } from "@/lib/i18n";
+import { CommandK } from "@/components/CommandK";
 
 const plexSerif = IBM_Plex_Serif({
   variable: "--font-plex-serif",
@@ -12,6 +15,12 @@ const plexSerif = IBM_Plex_Serif({
 const plexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const notoDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-noto-devanagari",
+  subsets: ["devanagari"],
   weight: ["400", "500", "600"],
 });
 
@@ -28,14 +37,15 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plexSerif.variable} ${plexSans.variable}`}
+      className={`${plexSerif.variable} ${plexSans.variable} ${notoDevanagari.variable}`}
     >
       <body className="min-h-screen bg-paper font-sans text-ink antialiased transition-colors duration-200">
-        <SiteHeader />
-        <main className="mx-auto max-w-5xl px-6">{children}</main>
-        <footer className="mx-auto mt-16 max-w-5xl border-t border-border px-6 py-8 text-xs text-ink-muted">
-          Tathya is an autonomous record, not a news outlet. No topic is chosen by hand. Every claim links to its source.
-        </footer>
+        <LanguageProvider>
+          <CommandK />
+          <SiteHeader />
+          <main className="mx-auto max-w-5xl px-4 sm:px-6">{children}</main>
+          <SiteFooter />
+        </LanguageProvider>
       </body>
     </html>
   );
