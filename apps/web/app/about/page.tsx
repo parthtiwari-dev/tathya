@@ -1,5 +1,11 @@
-export const metadata = {
-  title: "About — Tathya",
+"use client";
+
+import { useLanguage } from "@/lib/i18n";
+
+const heading = { en: "Mission & Ethics", hi: "मिशन और नैतिकता" };
+const notice = {
+  en: "This page is only available in English right now — a document this important to trust deserves a real human translation, not an automated one.",
+  hi: "यह पृष्ठ अभी केवल अंग्रेज़ी में उपलब्ध है — विश्वास के लिए इतना महत्वपूर्ण दस्तावेज़ एक वास्तविक मानव अनुवाद का हकदार है, स्वचालित अनुवाद का नहीं।",
 };
 
 const paragraphs = [
@@ -13,9 +19,18 @@ const paragraphs = [
 ];
 
 export default function AboutPage() {
+  const { lang } = useLanguage();
+
   return (
-    <article className="max-w-2xl py-12">
-      <h1 className="font-serif text-3xl font-medium text-ink">Mission &amp; Ethics</h1>
+    <article className="max-w-2xl py-10 sm:py-12">
+      <h1 className="font-serif text-2xl font-medium text-ink sm:text-3xl">{heading[lang]}</h1>
+
+      {lang === "hi" && (
+        <p className="mt-3 rounded-md border border-dashed border-border bg-surface p-3 text-xs text-ink-muted">
+          {notice.hi}
+        </p>
+      )}
+
       <div className="mt-6 space-y-5">
         {paragraphs.map((paragraph, i) => (
           <p key={i} className="text-[15px] leading-relaxed text-ink-secondary">

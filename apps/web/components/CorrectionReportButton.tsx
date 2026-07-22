@@ -2,14 +2,27 @@
 
 import { useState } from "react";
 import { Flag } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 const issueTypes = [
-  "Wrong quote",
-  "Wrong date",
-  "Wrong source",
-  "Misattribution",
-  "Other extraction error",
+  { en: "Wrong quote", hi: "गलत उद्धरण" },
+  { en: "Wrong date", hi: "गलत तिथि" },
+  { en: "Wrong source", hi: "गलत स्रोत" },
+  { en: "Misattribution", hi: "गलत आरोपण" },
+  { en: "Other extraction error", hi: "अन्य निष्कर्षण त्रुटि" },
 ];
+
+const t = {
+  reportIssue: { en: "Report an extraction issue", hi: "निष्कर्षण त्रुटि की रिपोर्ट करें" },
+  thanks: { en: "Reported — thank you.", hi: "रिपोर्ट कर दी गई — धन्यवाद।" },
+  placeholder: {
+    en: "What's wrong with the extraction? (not a dispute about the claim itself)",
+    hi: "निष्कर्षण में क्या गलत है? (यह दावे पर विवाद नहीं है)",
+  },
+  submit: { en: "Submit report", hi: "रिपोर्ट भेजें" },
+  sending: { en: "Sending…", hi: "भेजा जा रहा है…" },
+  cancel: { en: "Cancel", hi: "रद्द करें" },
+};
 
 // NOTE: this posts nowhere yet. Once API v1's POST /corrections is reachable
 // from the frontend (CORS configured, deployed URL known), replace the
@@ -21,9 +34,10 @@ export function CorrectionReportButton({
   targetTable: string;
   targetId: string;
 }) {
+  const { lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [issueType, setIssueType] = useState(issueTypes[0]);
+  const [issueType, setIssueType] = useState(issueTypes[0].en);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +50,7 @@ export function CorrectionReportButton({
   }
 
   if (submitted) {
-    return <p className="text-xs text-ink-muted">Reported — thank you.</p>;
+    return <p className="text-xs text-ink-muted">{t.thanks[lang]}</p>;
   }
 
   if (!open) {
@@ -46,7 +60,7 @@ export function CorrectionReportButton({
         className="inline-flex items-center gap-1 text-xs text-ink-muted transition-colors hover:text-accent"
       >
         <Flag size={11} />
-        Report an extraction issue
+        {t.reportIssue[lang]}
       </button>
     );
   }
@@ -61,15 +75,15 @@ export function CorrectionReportButton({
         className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
       >
         {issueTypes.map((type) => (
-          <option key={type} value={type}>
-            {type}
+          <option key={type.en} value={type.en}>
+            {type[lang]}
           </option>
         ))}
       </select>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="What's wrong with the extraction? (not a dispute about the claim itself)"
+        placeholder={t.placeholder[lang]}
         rows={2}
         className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
       />
@@ -79,14 +93,14 @@ export function CorrectionReportButton({
           disabled={submitting}
           className="rounded bg-accent px-2.5 py-1 text-xs font-medium text-paper disabled:opacity-60"
         >
-          {submitting ? "Sending…" : "Submit report"}
+          {submitting ? t.sending[lang] : t.submit[lang]}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="text-xs text-ink-muted hover:text-ink"
         >
-          Cancel
+          {t.cancel[lang]}
         </button>
       </div>
     </form>

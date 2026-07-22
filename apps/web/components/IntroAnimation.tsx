@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 const STORAGE_KEY = "tathya-intro-seen";
 
+const lines = {
+  line1: { en: "We don't tell you who's right.", hi: "हम यह नहीं बताते कि सही कौन है।" },
+  line2: {
+    en: "We record what was said, who said it, and what's verifiable.",
+    hi: "हम दर्ज करते हैं कि क्या कहा गया, किसने कहा, और क्या सत्यापन योग्य है।",
+  },
+};
+
 export function IntroAnimation() {
+  const { lang } = useLanguage();
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
 
@@ -33,10 +43,10 @@ export function IntroAnimation() {
     >
       <div className="max-w-md px-6 text-center">
         <p className="animate-[fadeUp_0.7s_ease_forwards] font-serif text-2xl font-medium text-ink opacity-0 [animation-delay:0.1s] sm:text-3xl">
-          We don&apos;t tell you who&apos;s right.
+          {lines.line1[lang]}
         </p>
         <p className="mt-3 animate-[fadeUp_0.7s_ease_forwards] font-serif text-lg text-ink-secondary opacity-0 [animation-delay:0.6s] sm:text-xl">
-          We record what was said, who said it, and what&apos;s verifiable.
+          {lines.line2[lang]}
         </p>
       </div>
       <style>{`
