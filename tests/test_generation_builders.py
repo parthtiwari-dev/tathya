@@ -9,6 +9,7 @@ from pipeline.generation.timeline_builder import build_timeline
 def test_roadmap_phase3_builders_keep_source_bound_artifacts() -> None:
     draft = CaseFileDraft(
         title="Reserve Bank of India",
+        slug="reserve-bank-of-india",
         neutral_summary="Neutral source-bound summary.",
         significance_score=10,
         promotable=False,
@@ -16,6 +17,7 @@ def test_roadmap_phase3_builders_keep_source_bound_artifacts() -> None:
         claims=(DraftClaim("govt", "Govt claim", "quoted span", "s1", "https://rbi/a"), DraftClaim("media", "Media claim", "quoted span", "s2", "https://news/a")),
         verifiable_facts=(DraftFact("Fact", "https://rbi/a", "dataset", "quoted span"),),
         related_entities=("Reserve Bank of India",),
+        ministry_entity_name="Reserve Bank of India",
     )
 
     assert build_neutral_summary(draft) == "Neutral source-bound summary."
@@ -25,8 +27,30 @@ def test_roadmap_phase3_builders_keep_source_bound_artifacts() -> None:
 
 
 def test_relations_builder_links_shared_entities() -> None:
-    first = CaseFileDraft("RBI", "", 1, False, (), (), (), ("Reserve Bank of India",))
-    second = CaseFileDraft("Finance", "", 1, False, (), (), (), ("Reserve Bank of India", "Ministry of Finance"))
+    first = CaseFileDraft(
+        title="RBI",
+        slug="rbi",
+        neutral_summary="",
+        significance_score=1,
+        promotable=False,
+        events=(),
+        claims=(),
+        verifiable_facts=(),
+        related_entities=("Reserve Bank of India",),
+        ministry_entity_name="Reserve Bank of India",
+    )
+    second = CaseFileDraft(
+        title="Finance",
+        slug="finance",
+        neutral_summary="",
+        significance_score=1,
+        promotable=False,
+        events=(),
+        claims=(),
+        verifiable_facts=(),
+        related_entities=("Reserve Bank of India", "Ministry of Finance"),
+        ministry_entity_name="Reserve Bank of India",
+    )
 
     relations = build_topic_relations([("topic-a", first), ("topic-b", second)])
 
