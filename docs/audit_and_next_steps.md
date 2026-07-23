@@ -229,3 +229,15 @@ Oracle's Always Free tier includes a real Ampere A1 VM (up to 4 OCPUs / 24GB RAM
 
 ### 8.5 Pipeline automation — workflows added
 `.github/workflows/embed.yml` and `.github/workflows/case-file.yml` have been added, following the exact pattern of the existing `ingest.yml` (checkout → setup-python 3.12 → `pip install` with the right extras → run the module with its Supabase secrets). Schedules are offset within the same 2-hour window as ingestion (`:17` ingest → `:35` embed → `:50` case-file) so each stage runs after the previous one has had time to land fresh data, rather than racing it. `case-file.yml` runs `pipeline.case_file_persist --promotable-only` — **this still uses the deterministic extractive builder until the Gemini-generation-persistence gap in Section 7.2 is fixed.** Turning this workflow on before that fix just automates the production of more raw-entity-titled Draft topics on a schedule — fix 7.2 first, then rely on this workflow.
+
+---
+
+## 9. Status check — 24 July 2026, post-deployment
+
+Both site (`tathya-1.vercel.app`) and API (`tathya-zi9p.onrender.com`) are now actually live. Re-confirming what's still open now that "deployed" is real and not hypothetical:
+
+1. **Section 7.2 (Gemini-generation persistence gap) is unchanged and still unfixed as of this check.** This remains the single highest-leverage next task — it is the reason the live, public site currently shows raw cluster titles instead of narrative case files, and every other item below is secondary to it in terms of visible impact.
+2. **CORS is not yet locked down against the real deployed origin.** `TATHYA_CORS_ORIGINS` should be set on Render to `https://tathya-1.vercel.app` now that this is a real, known URL — Section 3 item 3 / P1 item 6 previously only said "once a real frontend origin exists," which is now the case. This is a five-minute Render dashboard change, do it regardless of what else is in progress.
+3. **Domain is still a subdomain of Vercel/Render, not a custom domain.** Fine for continued testing; the roadmap's Phase 0 checklist still expects a real `.in`/`.org` domain before calling this genuinely public. Not urgent while the Gemini-generation gap is open — nobody should be pointed at this as a finished product yet regardless of domain.
+4. **`case-file.yml` remains correctly un-relied-upon** per 8.5 — do not schedule/enable it for real until item 1 above is fixed, same caveat as before, restated here because it's now live infrastructure rather than a draft workflow file.
+5. Everything else from Section 7.5's priority list (manual audit pass, sources expansion, corrections rate limiting, lifecycle, contradiction detection) is unchanged since the last update — no new movement on these to log yet.
