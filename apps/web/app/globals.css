@@ -45,3 +45,35 @@ body {
 * {
   border-color: var(--border-color);
 }
+
+/* Themed scrollbars — thin, desaturated, matches the paper/ink palette
+   instead of the browser default. Covers both the page's default vertical
+   scrollbar and any horizontally-scrolling container (e.g. Timeline). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
