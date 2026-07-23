@@ -44,7 +44,18 @@ def test_generate_grounded_case_file_uses_json_schema(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "google.genai.types", fake_types)
     monkeypatch.setenv("GEMINI_API_KEY", "key")
 
-    draft = CaseFileDraft("RBI", "summary", 1, False, (), (), (), ("RBI",))
+    draft = CaseFileDraft(
+        title="RBI",
+        slug="rbi",
+        neutral_summary="summary",
+        significance_score=1,
+        promotable=False,
+        events=(),
+        claims=(),
+        verifiable_facts=(),
+        related_entities=("RBI",),
+        ministry_entity_name="RBI",
+    )
 
     result = generate_grounded_case_file(draft, model_name="model")
 

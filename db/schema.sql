@@ -12,8 +12,8 @@ create table sources (id uuid primary key default gen_random_uuid(), source_key 
 create table signals (id uuid primary key default gen_random_uuid(), source_id uuid not null references sources(id), published_at timestamptz not null, ingested_at timestamptz not null default now(), title text, raw_text text not null, transcript text, url text not null, entities jsonb not null default '[]'::jsonb, snapshot_id uuid unique, duplicate_of_signal_id uuid references signals(id), embedding vector(768), unique (source_id, url));
 create table snapshots (id uuid primary key default gen_random_uuid(), signal_id uuid not null unique references signals(id), captured_at timestamptz not null, raw_content text not null, content_hash char(64) not null, unique (signal_id, content_hash));
 alter table signals add constraint signals_snapshot_id_fkey foreign key (snapshot_id) references snapshots(id);
-create table entities (id uuid primary key default gen_random_uuid(), name text not null, type text not null check (type in ('person', 'ministry', 'scheme', 'law', 'place')), aliases jsonb not null default '[]'::jsonb, unique (name, type));
-create table topics (id uuid primary key default gen_random_uuid(), title text not null, status topic_status not null default 'raw_cluster', first_seen timestamptz not null default now(), last_signal_at timestamptz not null, significance_score numeric not null default 0, summary text, summary_generated_at timestamptz);
+create table entities (id uuid primary key default gen_random_uuid(), name text not null, type text not null check (type in ('person', 'ministry', 'scheme', 'law', 'place')), aliases jsonb not null default '[]'::jsonb, slug text, unique (name, type));
+create table topics (id uuid primary key default gen_random_uuid(), title text not null, status topic_status not null default 'raw_cluster', first_seen timestamptz not null default now(), last_signal_at timestamptz not null, significance_score numeric not null default 0, summary text, summary_generated_at timestamptz, slug text);
 create table topic_signals (topic_id uuid references topics(id), signal_id uuid references signals(id), primary key (topic_id, signal_id));
 create table events (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), event_date date not null, description text not null, source_signal_ids uuid[] not null, created_at timestamptz not null default now());
 create table claims (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), claim_text text not null, source_type claim_source_type not null, source_signal_id uuid not null references signals(id), quoted_span text not null, created_at timestamptz not null default now());
@@ -21,6 +21,9 @@ create table verifiable_facts (id uuid primary key default gen_random_uuid(), to
 create table topic_relations (id uuid primary key default gen_random_uuid(), topic_id_a uuid not null references topics(id), topic_id_b uuid not null references topics(id), relation_type relation_type not null, created_at timestamptz not null default now(), check (topic_id_a <> topic_id_b), unique (topic_id_a, topic_id_b, relation_type));
 create table corrections (id uuid primary key default gen_random_uuid(), target_table text not null check (target_table in ('claims', 'events', 'verifiable_facts')), target_row_id uuid not null, issue_description text not null, status correction_status not null default 'reported', resolved_at timestamptz, created_at timestamptz not null default now());
 create table source_run_metrics (id uuid primary key default gen_random_uuid(), source_id uuid not null references sources(id), collected_at timestamptz not null default now(), signal_count integer not null check (signal_count >= 0), status text not null check (status in ('success', 'failure')), detail text);
+create table topic_entities (topic_id uuid not null references topics(id) on delete cascade, entity_id uuid not null references entities(id), is_ministry boolean not null default false, primary key (topic_id, entity_id));
+create table open_questions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, question text not null, related_claim_id uuid references claims(id), created_at timestamptz not null default now());
+create table contradictions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, entity_name text not null, statement_a_text text not null, statement_a_date date not null, statement_a_source_signal_id uuid not null references signals(id), statement_b_text text not null, statement_b_date date not null, statement_b_source_signal_id uuid not null references signals(id), created_at timestamptz not null default now());
 
 create function reject_snapshot_mutation() returns trigger language plpgsql as $$ begin raise exception 'snapshots are immutable'; end; $$;
 create trigger snapshots_no_update before update or delete on snapshots for each row execute function reject_snapshot_mutation();
@@ -32,6 +35,11 @@ create index claims_topic_idx on claims (topic_id, created_at);
 create index events_topic_date_idx on events (topic_id, event_date);
 create index snapshots_content_hash_idx on snapshots (content_hash);
 create index source_run_metrics_source_time_idx on source_run_metrics (source_id, collected_at desc);
+create unique index topics_slug_idx on topics (slug) where slug is not null;
+create unique index entities_slug_idx on entities (slug) where slug is not null;
+create index topic_entities_topic_idx on topic_entities (topic_id);
+create index open_questions_topic_idx on open_questions (topic_id, created_at);
+create index contradictions_topic_idx on contradictions (topic_id, created_at);
 create unique index events_topic_description_date_idx on events (topic_id, event_date, md5(description));
 create unique index claims_topic_signal_text_idx on claims (topic_id, source_signal_id, md5(claim_text));
 create unique index facts_topic_doc_text_idx on verifiable_facts (topic_id, primary_doc_url, md5(fact_text));
@@ -178,7 +186,8 @@ create function upsert_topic_cluster(
   p_title text,
   p_signal_ids uuid[],
   p_significance_score numeric,
-  p_summary text default null
+  p_summary text default null,
+  p_slug text default null
 ) returns uuid language plpgsql as $$
 declare
   v_topic_id uuid;
@@ -195,13 +204,14 @@ begin
     raise exception 'cannot upsert topic % without valid signal ids', p_title;
   end if;
 
-  insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at)
-  values (p_title, 'raw_cluster', v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end)
+  insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at, slug)
+  values (p_title, 'raw_cluster', v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, p_slug)
   on conflict (title) do update
   set last_signal_at = greatest(topics.last_signal_at, excluded.last_signal_at),
       significance_score = greatest(topics.significance_score, excluded.significance_score),
       summary = coalesce(excluded.summary, topics.summary),
-      summary_generated_at = case when excluded.summary is null then topics.summary_generated_at else now() end
+      summary_generated_at = case when excluded.summary is null then topics.summary_generated_at else now() end,
+      slug = coalesce(topics.slug, excluded.slug)
   returning id into v_topic_id;
 
   foreach v_signal_id in array p_signal_ids loop

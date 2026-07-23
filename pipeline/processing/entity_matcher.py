@@ -48,6 +48,19 @@ DEFAULT_ENTITIES: tuple[EntityDefinition, ...] = (
 )
 
 
+_ENTITY_TYPE_BY_NAME: dict[str, str] = {entity.name: entity.type for entity in DEFAULT_ENTITIES}
+
+
+def entity_type(name: str) -> str | None:
+    """Look up the seed entity type ('ministry', 'person', ...) for a matched entity name.
+
+    Used to classify a topic's matched entities into a ministry (for
+    Topic.ministry) vs. the rest (Topic.entityTags) without re-running
+    matching or coupling the API layer to the entity_matcher's internals.
+    """
+    return _ENTITY_TYPE_BY_NAME.get(name)
+
+
 def match_entities(text: str, entities: tuple[EntityDefinition, ...] = DEFAULT_ENTITIES) -> list[EntityDefinition]:
     """Return seed entities mentioned in text, using conservative word-boundary matching."""
     matches: list[EntityDefinition] = []

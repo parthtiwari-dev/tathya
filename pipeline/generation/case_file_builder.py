@@ -8,7 +8,9 @@ from dataclasses import dataclass
 import re
 
 from pipeline.processing.clusterer import TopicCluster, signal_text
+from pipeline.processing.entity_matcher import entity_type
 from pipeline.processing.text_cleaner import clean_source_text
+from shared.slugify import slugify
 
 
 @dataclass(frozen=True)
@@ -37,8 +39,26 @@ class DraftFact:
 
 
 @dataclass(frozen=True)
+class DraftOpenQuestion:
+    question: str
+    related_claim_source_signal_id: str
+
+
+@dataclass(frozen=True)
+class DraftContradiction:
+    entity_name: str
+    statement_a_text: str
+    statement_a_date: str
+    statement_a_source_signal_id: str
+    statement_b_text: str
+    statement_b_date: str
+    statement_b_source_signal_id: str
+
+
+@dataclass(frozen=True)
 class CaseFileDraft:
     title: str
+    slug: str
     neutral_summary: str
     significance_score: float
     promotable: bool
@@ -46,20 +66,59 @@ class CaseFileDraft:
     claims: tuple[DraftClaim, ...]
     verifiable_facts: tuple[DraftFact, ...]
     related_entities: tuple[str, ...]
+    ministry_entity_name: str | None
+    open_questions: tuple[DraftOpenQuestion, ...] = ()
+    contradictions: tuple[DraftContradiction, ...] = ()
 
 
 def build_case_file_draft(cluster: TopicCluster) -> CaseFileDraft:
     rows = list(cluster.rows)
+    claims = tuple(_claims(rows))
     return CaseFileDraft(
         title=cluster.key,
+        slug=slugify(cluster.key),
         neutral_summary=_summary(rows),
         significance_score=cluster.significance.score,
         promotable=cluster.significance.promotable,
         events=tuple(_events(rows)),
-        claims=tuple(_claims(rows)),
+        claims=claims,
         verifiable_facts=tuple(_facts(rows)),
         related_entities=cluster.entities,
+        ministry_entity_name=_ministry_entity(cluster.entities),
+        open_questions=tuple(_open_questions(claims)),
+        # Contradiction detection needs cross-signal semantic comparison the
+        # extractive builder deliberately doesn't do (see roadmap: no
+        # fabricated/inferred content). Left empty until a grounded generation
+        # step (e.g. gemini_case_file.py) is wired into persistence.
+        contradictions=(),
     )
+
+
+def _ministry_entity(entity_names: tuple[str, ...]) -> str | None:
+    return next((name for name in entity_names if entity_type(name) == "ministry"), None)
+
+
+def _open_questions(claims: tuple[DraftClaim, ...]) -> list[DraftOpenQuestion]:
+    """Flag the structural case of 'no official claim has been added yet'.
+
+    This is purely a presence/absence check over what was already extracted
+    -- it never invents or infers content, consistent with the rest of this
+    builder.
+    """
+    if not claims or any(claim.source_type == "govt" for claim in claims):
+        return []
+    first = claims[0]
+    return [
+        DraftOpenQuestion(
+            question=(
+                "No official government statement on this has been recorded as a "
+                "verifiable fact yet -- only "
+                + ("citizen and " if any(c.source_type == "citizen" for c in claims) else "")
+                + "media reporting exists so far."
+            ),
+            related_claim_source_signal_id=first.source_signal_id,
+        )
+    ]
 
 
 def _summary(rows: list[dict]) -> str:
