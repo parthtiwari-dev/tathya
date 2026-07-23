@@ -1,0 +1,33 @@
+name: Persist case files
+
+# NOTE: as of 24 Jul 2026 this runs the deterministic extractive builder only
+# (pipeline/case_file_persist.py has not yet been wired to the Gemini-grounded
+# generation path -- see docs/audit_and_next_steps.md Section 7.2). Enabling
+# this schedule before that fix just automates production of raw-entity-titled
+# Draft topics. Fix 7.2 first, then rely on this workflow.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "50 */2 * * *"   # offset after embed.yml's :35 so clustering sees fresh vectors
+
+permissions:
+  contents: read
+
+jobs:
+  case-file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pipeline with generation + embeddings extras
+        run: python -m pip install ".[generation,embeddings]"
+      - name: Persist promotable case-file drafts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m pipeline.case_file_persist --promotable-only
