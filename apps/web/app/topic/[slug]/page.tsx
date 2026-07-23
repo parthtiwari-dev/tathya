@@ -1,18 +1,16 @@
 import { notFound } from "next/navigation";
-import { getAllTopics, getTopicBySlug } from "@/lib/mock-data";
+import { getTopicBySlug } from "@/lib/api";
 import { TopicPageBody } from "@/components/TopicPageBody";
 
-export function generateStaticParams() {
-  return getAllTopics().map((topic) => ({ slug: topic.slug }));
-}
-
+// Dynamic per-request (no generateStaticParams / static generation) so a
+// newly persisted topic shows up without a rebuild -- see lib/api.ts.
 export default async function TopicPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const topic = getTopicBySlug(slug);
+  const topic = await getTopicBySlug(slug);
   if (!topic) notFound();
   return <TopicPageBody topic={topic} />;
 }

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
-import { getAllTopics } from "@/lib/mock-data";
+import { getAllTopics } from "@/lib/api";
+import type { TopicSummary } from "@/lib/types";
 import { useLanguage, dict } from "@/lib/i18n";
 
 export function CommandPalette() {
@@ -11,7 +12,13 @@ export function CommandPalette() {
   const { lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const topics = useMemo(() => getAllTopics(), []);
+  const [topics, setTopics] = useState<TopicSummary[]>([]);
+
+  useEffect(() => {
+    getAllTopics()
+      .then(setTopics)
+      .catch(() => setTopics([]));
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

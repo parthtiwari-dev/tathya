@@ -120,16 +120,37 @@ class SupabaseRepository:
         result = self._get(path)
         return result if isinstance(result, list) else []
 
-    def list_topics(self, limit: int = 20, offset: int = 0) -> tuple[list[dict], int | None]:
-        query = urlencode(
-            {
-                "select": f"id,slug,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
-                "order": "last_signal_at.desc",
-                "limit": str(limit),
-                "offset": str(offset),
-            }
+    def list_topics(
+        self, limit: int = 20, offset: int = 0, ministry_slug: str | None = None
+    ) -> tuple[list[dict], int | None]:
+        params = {
+            "select": f"id,slug,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
+            "order": "last_signal_at.desc",
+            "limit": str(limit),
+            "offset": str(offset),
+        }
+        if ministry_slug:
+            topic_ids = self._topic_ids_for_ministry_slug(ministry_slug)
+            if not topic_ids:
+                return [], 0
+            params["id"] = f"in.({','.join(topic_ids)})"
+        return self._get_with_count(f"topics?{urlencode(params)}")
+
+    def _topic_ids_for_ministry_slug(self, ministry_slug: str) -> list[str]:
+        """Resolve a ministry slug to topic ids via a two-step lookup.
+
+        PostgREST can filter on a two-level-deep embedded resource, but not
+        reliably enough to depend on here, so this resolves entity -> topic
+        ids explicitly instead of a single nested-filter query.
+        """
+        entity_rows = self.get_table_rows(f"entities?{urlencode({'slug': f'eq.{ministry_slug}', 'select': 'id'})}")
+        if not entity_rows:
+            return []
+        entity_id = entity_rows[0]["id"]
+        links = self.get_table_rows(
+            f"topic_entities?{urlencode({'entity_id': f'eq.{entity_id}', 'select': 'topic_id'})}"
         )
-        return self._get_with_count(f"topics?{query}")
+        return [link["topic_id"] for link in links]
 
     def get_topic_by_slug(self, slug: str) -> dict | None:
         query = urlencode(

@@ -1,11 +1,6 @@
 import { notFound } from "next/navigation";
-import { getSourceByKey, sources } from "@/lib/mock-sources";
-import { getClaimsBySourceKey } from "@/lib/mock-data";
+import { getSourceByKey, getClaimsBySourceKey } from "@/lib/api";
 import { SourcePageBody } from "@/components/SourcePageBody";
-
-export function generateStaticParams() {
-  return sources.map((s) => ({ sourceKey: s.sourceKey }));
-}
 
 export default async function SourceDetailPage({
   params,
@@ -13,10 +8,10 @@ export default async function SourceDetailPage({
   params: Promise<{ sourceKey: string }>;
 }) {
   const { sourceKey } = await params;
-  const source = getSourceByKey(sourceKey);
+  const source = await getSourceByKey(sourceKey);
   if (!source) notFound();
 
-  const claims = getClaimsBySourceKey(sourceKey);
+  const claims = await getClaimsBySourceKey(sourceKey);
 
   return <SourcePageBody source={source} claims={claims} />;
 }

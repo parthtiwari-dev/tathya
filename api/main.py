@@ -80,10 +80,11 @@ def health() -> dict:
 def topics(
     limit: int = 20,
     offset: int = 0,
+    ministry_slug: str | None = None,
     repository: SupabaseRepository = Depends(get_repository),
 ) -> Page[TopicSummary]:
     safe_limit, safe_offset = _paginate(limit, offset)
-    rows, total = repository.list_topics(limit=safe_limit, offset=safe_offset)
+    rows, total = repository.list_topics(limit=safe_limit, offset=safe_offset, ministry_slug=ministry_slug)
     return Page(items=[mappers.to_topic_summary(row) for row in rows], limit=safe_limit, offset=safe_offset, total=total)
 
 

@@ -1,10 +1,9 @@
-import { getAllTopics, getAllMinistries } from "@/lib/mock-data";
+import { getAllTopics, getAllMinistries } from "@/lib/api";
 import { FeedExplorer } from "@/components/FeedExplorer";
 import { IntroAnimation } from "@/components/IntroAnimation";
 
-export default function HomePage() {
-  const topics = getAllTopics();
-  const ministries = getAllMinistries();
+export default async function HomePage() {
+  const [topics, ministries] = await Promise.all([getAllTopics(), getAllMinistries()]);
 
   return (
     <>
