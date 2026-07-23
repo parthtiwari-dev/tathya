@@ -2,13 +2,36 @@
 
 Tathya (तथ्य, “fact”) is an autonomous, non-partisan record of India's Union Government. It does not manually select topics or issue AI verdicts: configured public sources are watched continuously and clustered into sourced case files showing what government, media, and citizens said. You decide.
 
+## Live
+
+- **Site:** [tathya-1.vercel.app](https://tathya-1.vercel.app/)
+- **API docs (Swagger UI):** [tathya-zi9p.onrender.com/docs](https://tathya-zi9p.onrender.com/docs)
+
+The API runs on Render's free tier and sleeps after 15 minutes of inactivity (cold start ~30–60s on the next request); an external uptime pinger keeps it warm during normal use. Frontend topics currently reflect Phase 2 clustering output, not final Phase 3 generation — see `docs/audit_and_next_steps.md` Section 7.2 for why titles/summaries look raw right now.
+
 ## Current foundation
 
-This foundation now provides the project layout, typed pipeline models, an immutable snapshot builder, the Supabase/Postgres schema, a source registry, dry-run ingestion, Supabase persistence, source-health metrics, and Telegram test alerts.
+The pipeline (ingestion → snapshotting → clustering → extractive/Gemini-grounded generation → persistence) and API v1 (`api/main.py`, typed against `apps/web/lib/types.ts`) are both built and deployed. The Next.js frontend (`apps/web/`) is fully wired to the real API — no mock data. What's still incomplete: `pipeline/case_file_persist.py` only calls the deterministic extractive builder, not the Gemini-grounded path, so live topics currently show raw cluster titles/templated summaries rather than final generated case files; the manual Phase 3 audit gate hasn't run yet either. See `docs/audit_and_next_steps.md` for the up-to-date gap list — it is more current than this file for "what's actually left."
 
-## Run locally
+## Frontend (apps/web)
 
-Use Python 3.11+.
+```powershell
+cd apps/web
+npm install
+npm run dev
+```
+
+Runs at `http://localhost:3000`. Set `NEXT_PUBLIC_TATHYA_API_URL` in `apps/web/.env.local` to point at a running API (defaults to `http://localhost:8000` if unset — see `apps/web/lib/api.ts`). In production this points at the deployed Render API instead.
+
+## Deployment
+
+- **Frontend → Vercel:** connect the repo, set Root Directory to `apps/web`, set `NEXT_PUBLIC_TATHYA_API_URL` to the deployed API URL. Currently live at [tathya-1.vercel.app](https://tathya-1.vercel.app/).
+- **API → Render (free tier):** Root Directory blank (repo root), Build Command `pip install ".[api]"`, Start Command `uvicorn api.main:app --host 0.0.0.0 --port $PORT`, Health Check Path `/health`, env vars `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `TATHYA_CORS_ORIGINS`. Currently live at [tathya-zi9p.onrender.com/docs](https://tathya-zi9p.onrender.com/docs) — sleeps after 15 minutes of inactivity on the free tier, kept warm with an external ping (e.g. cron-job.org) hitting `/health` every ~10 minutes rather than Render's own (paid) Cron Jobs product.
+- Full reasoning, RAM caveats for `/signals/search` on the free tier, and the Oracle Cloud always-on alternative are documented in `docs/audit_and_next_steps.md` Section 8.
+
+## Run locally (pipeline/API)
+
+Use Python 3.11+ (repo pins `3.12.7` via `runtime.txt` for hosted deploys).
 
 ```powershell
 python -m venv .venv
@@ -41,7 +64,13 @@ PIB, Lok Sabha, Rajya Sabha, and YouTube now have source-specific adapters. They
 
 ## Scheduled ingestion
 
-[`ingest.yml`](.github/workflows/ingest.yml) runs enabled sources every six hours after you add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub repository secrets. It can also be run manually from the Actions tab.
+Three GitHub Actions workflows run on a schedule once `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are added as repository secrets (offset within the same 2-hour window so each stage runs after the previous one has fresh data):
+
+- [`ingest.yml`](.github/workflows/ingest.yml) — fetches enabled sources (`:17`).
+- [`embed.yml`](.github/workflows/embed.yml) — embeds newly persisted signals (`:35`), installs the `embeddings` extra.
+- [`case-file.yml`](.github/workflows/case-file.yml) — persists promotable case-file drafts (`:50`). **Currently uses the deterministic extractive builder only** — it is not yet wired to the Gemini-grounded generation path, so enabling it produces the same raw-titled Draft topics described in `docs/audit_and_next_steps.md` Section 7.2, just on a schedule. Fix that gap before leaning on this workflow for real published output.
+
+All three can also be run manually from the Actions tab (`workflow_dispatch`).
 
 Optional source-failure and low-volume alerts need `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` added as GitHub repository secrets (and, for local runs, to `.env`).
 
