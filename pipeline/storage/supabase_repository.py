@@ -141,6 +141,15 @@ class SupabaseRepository:
         rows = self.get_table_rows(f"topics?{query}")
         return rows[0] if rows else None
 
+    def list_ministries(self) -> list[dict]:
+        """Ministries actually linked to at least one topic (not the full entities catalog)."""
+        query = urlencode({"select": "name,slug,topic_entities!inner(topic_id)", "type": "eq.ministry"})
+        rows = self.get_table_rows(f"entities?{query}")
+        seen: dict[str, dict] = {}
+        for row in rows:
+            seen.setdefault(row["name"], row)
+        return list(seen.values())
+
     def list_sources(self) -> list[dict]:
         query = urlencode({"select": "*", "order": "source_key.asc"})
         return self.get_table_rows(f"sources?{query}")

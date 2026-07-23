@@ -131,7 +131,7 @@ def topic_history(topic_id: str, repository: SupabaseRepository = Depends(get_re
 @app.get("/ministries", response_model=list[Ministry])
 def ministries(repository: SupabaseRepository = Depends(get_repository)) -> list[Ministry]:
     rows = repository.list_ministries()
-    return [Ministry(slug=row.get("slug") or "unclassified", name=mappers._ministry_label(row["name"])) for row in rows]
+    return [Ministry(slug=row.get("slug") or "unclassified", name=mappers.ministry_label(row["name"])) for row in rows]
 
 
 # ---------------------------------------------------------------------------
