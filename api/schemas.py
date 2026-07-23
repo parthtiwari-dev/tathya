@@ -50,10 +50,13 @@ class Claim(BaseModel):
     sourceSignalId: str
     quotedSpan: str
     createdAt: Optional[datetime] = None
-    sourceName: Optional[str] = None
-    sourceUrl: Optional[str] = None
-    sourceKey: Optional[str] = None
-    publishedAt: Optional[datetime] = None
+    # Always populated -- every call site (topic_claims, topic_detail,
+    # claims_for_source) embeds signal->source in its select. Required here
+    # (not Optional) to match lib/types.ts' Claim exactly.
+    sourceName: str
+    sourceUrl: str
+    sourceKey: str
+    publishedAt: datetime
     # Populated only by /sources/{key}/claims, where a claim is shown out of
     # topic context and needs to link back to its topic.
     topicSlug: Optional[str] = None
@@ -79,8 +82,10 @@ class VerifiableFact(BaseModel):
 class TopicRelation(BaseModel):
     id: str
     relatedTopicId: str
-    relatedTopicSlug: Optional[str] = None
-    relatedTopicTitle: Optional[str] = None
+    # Always populated -- topic_relations_list embeds the related topic in
+    # both directions. Required to match lib/types.ts.
+    relatedTopicSlug: str
+    relatedTopicTitle: str
     relationType: str
 
 

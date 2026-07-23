@@ -90,3 +90,22 @@ export async function searchSignals(query: string): Promise<SignalSearchResult[]
   );
   return data.results;
 }
+
+export async function submitCorrection(input: {
+  targetTable: "claims" | "events" | "verifiable_facts";
+  targetRowId: string;
+  issueDescription: string;
+}): Promise<void> {
+  const res = await fetch(`${API_BASE}/corrections`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      target_table: input.targetTable,
+      target_row_id: input.targetRowId,
+      issue_description: input.issueDescription,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to submit correction: ${res.status}`);
+  }
+}

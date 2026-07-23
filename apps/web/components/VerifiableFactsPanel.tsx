@@ -37,7 +37,7 @@ export function VerifiableFactsPanel({ facts, lang = "en" }: { facts: Verifiable
               </a>
             </div>
             <div className="mt-2">
-              <CorrectionReportButton targetTable="facts" targetId={fact.id} />
+              <CorrectionReportButton targetTable="verifiable_facts" targetId={fact.id} />
             </div>
           </li>
         ))}

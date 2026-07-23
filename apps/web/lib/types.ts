@@ -16,6 +16,7 @@ export type HistoryEntryType =
   | "claim_added"
   | "event_added"
   | "fact_added"
+  | "correction_reported"
   | "correction_applied"
   | "status_changed";
 

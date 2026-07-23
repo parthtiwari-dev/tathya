@@ -14,6 +14,7 @@ const typeLabel: Record<HistoryEntry["type"], { en: string; hi: string }> = {
   claim_added: { en: "Claim added", hi: "दावा जोड़ा गया" },
   event_added: { en: "Event added", hi: "घटना जोड़ी गई" },
   fact_added: { en: "Fact added", hi: "तथ्य जोड़ा गया" },
+  correction_reported: { en: "Correction reported", hi: "सुधार की सूचना दी गई" },
   correction_applied: { en: "Correction applied", hi: "सुधार लागू किया गया" },
   status_changed: { en: "Status changed", hi: "स्थिति बदली गई" },
 };

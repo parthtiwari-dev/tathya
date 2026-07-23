@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Flag } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { submitCorrection } from "@/lib/api";
 
 const issueTypes = [
   { en: "Wrong quote", hi: "गलत उद्धरण" },
@@ -22,21 +23,23 @@ const t = {
   submit: { en: "Submit report", hi: "रिपोर्ट भेजें" },
   sending: { en: "Sending…", hi: "भेजा जा रहा है…" },
   cancel: { en: "Cancel", hi: "रद्द करें" },
+  failed: { en: "Couldn't send that — try again?", hi: "भेजा नहीं जा सका — फिर से कोशिश करें?" },
 };
 
-// NOTE: this posts nowhere yet. Once API v1's POST /corrections is reachable
-// from the frontend (CORS configured, deployed URL known), replace the
-// setTimeout below with a real fetch(`${API_URL}/corrections`, { method: "POST", body: ... }).
+// NOTE: /corrections/public and rate-limiting are deliberately not live yet
+// (see docs/roadmap_execution_plan.md -- left for right before launch), but
+// POST /corrections itself is reachable, so this submits for real.
 export function CorrectionReportButton({
   targetTable,
   targetId,
 }: {
-  targetTable: string;
+  targetTable: "claims" | "events" | "verifiable_facts";
   targetId: string;
 }) {
   const { lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
   const [issueType, setIssueType] = useState(issueTypes[0].en);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -44,9 +47,19 @@ export function CorrectionReportButton({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setSubmitting(false);
-    setSubmitted(true);
+    setError(false);
+    try {
+      await submitCorrection({
+        targetTable,
+        targetRowId: targetId,
+        issueDescription: note.trim() ? `${issueType}: ${note.trim()}` : issueType,
+      });
+      setSubmitted(true);
+    } catch {
+      setError(true);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -87,6 +100,7 @@ export function CorrectionReportButton({
         rows={2}
         className="w-full rounded border border-border bg-paper px-2 py-1 text-xs"
       />
+      {error && <p className="text-xs text-red-600">{t.failed[lang]}</p>}
       <div className="flex items-center gap-2">
         <button
           type="submit"
