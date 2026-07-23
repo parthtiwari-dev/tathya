@@ -88,6 +88,11 @@ export interface SourceCount {
   citizen: number;
 }
 
+export interface Ministry {
+  slug: string;
+  name: string;
+}
+
 export interface Topic {
   id: string;
   slug: string;
