@@ -46,6 +46,19 @@ def get_repository() -> SupabaseRepository:
     return SupabaseRepository.from_environment()
 
 
+_embedder: LocalEmbedder | None = None
+
+
+def _get_embedder() -> LocalEmbedder:
+    # Loaded once per process, not once per request: LocalEmbedder.__init__
+    # loads the full sentence-transformers model from disk, which is too
+    # expensive to repeat on every /signals/search call.
+    global _embedder
+    if _embedder is None:
+        _embedder = LocalEmbedder()
+    return _embedder
+
+
 def _paginate(limit: int, offset: int, max_limit: int = 100) -> tuple[int, int]:
     safe_limit = max(1, min(limit, max_limit))
     safe_offset = max(0, offset)
@@ -204,8 +217,7 @@ def search_signals(
     if not q.strip():
         raise HTTPException(status_code=400, detail="q is required")
     safe_limit = max(1, min(limit, 50))
-    embedder = LocalEmbedder()
-    embedding = vector_literal(embedder.encode_queries([q])[0])
+    embedding = vector_literal(_get_embedder().encode_query(q))
     return {
         "query": q,
         "results": repository.match_similar_signals(
