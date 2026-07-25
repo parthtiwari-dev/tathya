@@ -24,10 +24,30 @@ const notoDevanagari = Noto_Sans_Devanagari({
   weight: ["400", "500", "600"],
 });
 
+const SITE_URL = "https://tathya-1.vercel.app";
+const SITE_DESCRIPTION =
+  "An autonomous, non-partisan civic record of the Government of India. We don't tell you who's right. We record what was said, who said it, and what's verifiable.";
+
 export const metadata: Metadata = {
-  title: "Tathya — तथ्य",
-  description:
-    "An autonomous, non-partisan civic record of the Government of India. We don't tell you who's right. We record what was said, who said it, and what's verifiable.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Tathya — तथ्य",
+    template: "%s — Tathya",
+  },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Tathya",
+    title: "Tathya — तथ्य",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary",
+    title: "Tathya — तथ्य",
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
