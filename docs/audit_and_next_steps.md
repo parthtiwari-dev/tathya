@@ -187,6 +187,12 @@ Current state: 14 sources defined in `shared/config.py`, only 3 enabled (RBI, In
 
 **Do not enable a source faster than you can verify it.** A bad feed URL that silently 403s or returns stale data is worse than not having the source, because it can create a false "no signal" reading that skews significance scoring. Batch this in groups of ~10, verify, then move to the next batch.
 
+### 7.4.1 PIB fixed — real bug, real cause, 24 July 2026
+The "PIB returns 403" note from earlier turned out to be wrong. Directly fetching `https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3` returns a valid, live RSS 2.0 feed with no blocking at all. The real problem was a **two-file drift**, exactly the risk this doc warned about in 7.4: `shared/config.py` had already been corrected to `Regid=3` at some point, but `db/seed_sources.sql` still had the old, wrong `Regid=1` and `enabled=false`. Both files are now fixed and in agreement (`Regid=3`, `enabled=true`). Two things to know before trusting this source fully:
+- **PIB's RSS is organized by content-type and region, not by ministry.** `ModId=6` ("Releases") under `Regid=3` ("National") already covers every ministry combined in one feed — no per-ministry adapter work needed, which is simpler than originally assumed.
+- **Items observed in a sample fetch had title + link only, no description/body text.** If that holds for the real Releases feed (not just the Media Advisories sample checked), PIB signals will be thinner than RBI's or a media outlet's — still useful as official titles + direct source links, just don't expect rich claim text to come out of PIB alone.
+- Remember to re-run `db/seed_sources.sql` against Supabase once (it only updates the `sources` table row — the scheduler reads `STARTER_SOURCES` from `config.py` directly, so `enabled=True` there is what actually makes ingestion pick it up).
+
 ### 7.5 Updated priority order (replaces Section 3's list where they overlap)
 1. **Fix the Gemini-generation persistence gap (7.2).** Nothing else matters if every topic looks like a raw cluster.
 2. **Automate what's currently manual (7.3):** `embed.yml`, `case-file.yml` workflows so the pipeline runs without you.

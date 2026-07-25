@@ -1,6 +1,6 @@
 -- Seed the source registry. Re-running this is safe.
 insert into sources (source_key, name, type, url, trust_category, enabled) values
-  ('pib-press-releases', 'Press Information Bureau - Press Releases', 'pib', 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1', 'official', false),
+  ('pib-press-releases', 'Press Information Bureau - Press Releases', 'pib', 'https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3', 'official', true),
   ('pmo-youtube', 'PMO India - YouTube', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCDS9hpqUEXsXUIcf0qDcBIA', 'official', false),
   ('pmindia-news-updates', 'Prime Minister of India - News Updates', 'official_website', 'https://www.pmindia.gov.in/en/news-updates/', 'official', false),
   ('income-tax-press-releases', 'Income Tax Department - Press Releases', 'rss', 'https://www.incometaxindia.gov.in/press-release-rss-feed/-/asset_publisher/bxhj/rss', 'official', false),

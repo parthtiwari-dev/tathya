@@ -14,9 +14,9 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         key="pib-press-releases",
         name="Press Information Bureau - Press Releases",
         type=SourceType.PIB,
-        url="https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=1",
+        url="https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3",
         trust_category=TrustCategory.OFFICIAL,
-        enabled=False,
+        enabled=True,
     ),
     SourceDefinition(
         key="pmo-youtube",
