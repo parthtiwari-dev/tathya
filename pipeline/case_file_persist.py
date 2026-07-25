@@ -27,6 +27,16 @@ def main(argv: list[str] | None = None) -> int:
     repository = SupabaseRepository.from_environment()
     rows = repository.recent_signals(limit=args.signals)
     clusters = cluster_signals(rows, limit=args.topics)
+    print(f"Clusters found: {len(clusters)} (from {len(rows)} recent signals inspected)")
+    for cluster in clusters:
+        significance = cluster.significance
+        print(
+            f"  - {cluster.key!r}: {significance.canonical_count} signals, "
+            f"{significance.independent_source_count} distinct sources, "
+            f"official={significance.official_source_present}, "
+            f"non_official={significance.media_or_citizen_source_present}, "
+            f"score={significance.score:g}, promotable={significance.promotable}"
+        )
     persisted = 0
     path_counts = {"grounded": 0, "extractive_fallback": 0, "extractive_only": 0}
     topic_drafts = []

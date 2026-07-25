@@ -299,3 +299,23 @@ Until this is confirmed applied, `case-file.yml` will keep failing every 2 hours
 
 ### 11.3 Why "the frontend never showed new news even when these used to work"
 Worth naming explicitly: even on a run where `case-file.yml` succeeds, every topic it persists today is still a raw-cluster-titled draft per Section 7.2 (no Gemini-grounded generation wired into `case_file_persist.py` yet, `status` only flips to `live` via the `promotable` gate discussed in 10.3). So there are two independent reasons the public site hasn't been visibly updating: (1) `case-file.yml` has been failing outright on the RPC 404 above, and (2) even a successful run wouldn't have produced anything that looks like a finished case file yet. Fixing 11.2 unblocks *a* topic getting persisted; it does not by itself fix what that topic looks like — Section 7.2 is still the next task after that.
+
+---
+
+## 12. Full fresh-start rebuild, all four workflows run clean — 25 July 2026, and a real architectural gap it surfaced
+
+After the DB wipe (Section 11's fix applied, all seeds correctly re-run this time), all four workflows succeeded end to end for the first time: `ingest.yml` persisted 330 signals across all 4 enabled sources (PIB included — the header fix from 11.1 held), `embed.yml` embedded 200/330, `case-file.yml` ran clean with zero RPC errors, and `lifecycle.yml` correctly no-opped ("No stale live topics found"). But `case-file.yml`'s own summary line read `Total case-file drafts persisted: 0 (grounded: 0, extractive fallback: 0, extractive-only: 0)` — so `topics` is still empty, and the frontend correctly shows nothing, because there is genuinely nothing to show yet. Not a bug in the display path.
+
+Digging into *why* nothing was promotable surfaced something worth flagging on its own:
+
+**`pipeline/processing/clusterer.py`'s `cluster_signals()` never touches the `embedding` column at all.** Clustering works entirely by matching a signal's title against the ~34 hand-seeded rows in `entities` (via `match_entities`) — if a title doesn't contain one of those exact names or aliases, the signal falls into `fallback_bucket()`, which groups purely by the first few long words of the title. Two outlets covering the same real event almost never phrase a headline identically, so fallback buckets essentially never merge signals from different sources in practice. The practical consequence: `promotable` (2+ distinct sources, including one official) can currently really only be hit when multiple sources happen to name one of those ~34 known entities in their title — which is a narrow surface across a fresh 330-signal, single-pass ingest. `seed_entities_core.sql`'s own header comment already flags the entity list as a "starter spine only," so this isn't a new problem, but it's now a *confirmed, load-bearing* one: the entity list's completeness directly gates whether anything is ever promotable, not just how well things get tagged for the Ministry pages.
+
+A second-order effect of this: `embed.yml` — which downloads roughly 2GB of PyTorch/CUDA dependencies and takes 3+ minutes every scheduled run — currently has **zero influence on what gets promoted**. It exists solely to power `/signals/search`'s separate semantic search endpoint. Two systems that look connected (both operate on the same `signals` table, both matter for "finding the same story twice") but aren't wired together at all right now.
+
+**Diagnostic added, not yet a fix:** `case_file_persist.py` now prints every cluster it finds — signal count, distinct source count, official/non-official presence, score, and promotable status — before filtering, regardless of `--promotable-only`. Previously the only visible output was a single "0 persisted" number with no way to tell "clustering found nothing" from "clustering found several plausible topics, none crossed the bar yet." Re-running `case-file.yml` now will show which of those two it actually is.
+
+**Two real paths forward, not yet decided between:**
+1. Expand `seed_entities_core.sql` meaningfully (schemes, more ministers/MPs/opposition figures, ongoing named controversies/events) so more real stories have a shared anchor entity across sources — the more mechanical, incremental fix.
+2. Wire the existing embeddings into `cluster_signals()` as a similarity-based grouping path (e.g. group near-duplicate/high-cosine-similarity signals regardless of shared named entity), so clustering isn't solely dependent on the hand-seeded list — the more structural fix, and the one that would also finally make the embed.yml compute cost pull its weight for something beyond search.
+
+Neither is applied yet; this section is the diagnosis, not the resolution.
