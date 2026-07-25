@@ -431,6 +431,7 @@ class SupabaseRepository:
                 "p_significance_score": draft.significance_score,
                 "p_summary": draft.neutral_summary,
                 "p_slug": draft.slug,
+                "p_promotable": draft.promotable,
             },
         )
         if not topic_id:

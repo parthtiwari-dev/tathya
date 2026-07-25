@@ -187,13 +187,15 @@ create function upsert_topic_cluster(
   p_signal_ids uuid[],
   p_significance_score numeric,
   p_summary text default null,
-  p_slug text default null
+  p_slug text default null,
+  p_promotable boolean default false
 ) returns uuid language plpgsql as $$
 declare
   v_topic_id uuid;
   v_first_seen timestamptz;
   v_last_seen timestamptz;
   v_signal_id uuid;
+  v_status text;
 begin
   select min(published_at), max(published_at)
   into v_first_seen, v_last_seen
@@ -204,14 +206,17 @@ begin
     raise exception 'cannot upsert topic % without valid signal ids', p_title;
   end if;
 
+  v_status := case when p_promotable then 'live' else 'raw_cluster' end;
+
   insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at, slug)
-  values (p_title, 'raw_cluster', v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, p_slug)
+  values (p_title, v_status::topic_status, v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, coalesce(p_slug, p_title))
   on conflict (title) do update
   set last_signal_at = greatest(topics.last_signal_at, excluded.last_signal_at),
       significance_score = greatest(topics.significance_score, excluded.significance_score),
       summary = coalesce(excluded.summary, topics.summary),
       summary_generated_at = case when excluded.summary is null then topics.summary_generated_at else now() end,
-      slug = coalesce(topics.slug, excluded.slug)
+      slug = coalesce(topics.slug, excluded.slug),
+      status = case when excluded.status = 'live' then 'live'::topic_status else topics.status end
   returning id into v_topic_id;
 
   foreach v_signal_id in array p_signal_ids loop

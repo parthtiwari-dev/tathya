@@ -1,10 +1,16 @@
 name: Persist case files
 
-# NOTE: as of 24 Jul 2026 this runs the deterministic extractive builder only
-# (pipeline/case_file_persist.py has not yet been wired to the Gemini-grounded
-# generation path -- see docs/audit_and_next_steps.md Section 7.2). Enabling
-# this schedule before that fix just automates production of raw-entity-titled
-# Draft topics. Fix 7.2 first, then rely on this workflow.
+# As of 24 Jul 2026, case_file_persist.py calls Gemini-grounded generation by
+# default (falling back to the deterministic extractive builder per topic on
+# any failure -- see pipeline/generation/grounded_case_file_draft.py). This
+# needs two things to actually work end to end, both one-time:
+#   1. GEMINI_API_KEY set as a repo secret (below) -- without it every topic
+#      silently falls back to extractive, which won't error but also won't
+#      produce narrative case files.
+#   2. db/migrations/008_topic_status_promotion.sql applied to Supabase --
+#      without it, upsert_topic_cluster still hardcodes status='raw_cluster'
+#      and topics will never show as Live regardless of generation quality.
+# See docs/audit_and_next_steps.md Section 7.2 for the full history.
 
 on:
   workflow_dispatch:
