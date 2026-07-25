@@ -7,7 +7,7 @@ Tathya (तथ्य, “fact”) is an autonomous, non-partisan record of India
 - **Site:** [tathya-1.vercel.app](https://tathya-1.vercel.app/)
 - **API docs (Swagger UI):** [tathya-zi9p.onrender.com/docs](https://tathya-zi9p.onrender.com/docs)
 
-The API runs on Render's free tier and sleeps after 15 minutes of inactivity (cold start ~30–60s on the next request); an external uptime pinger keeps it warm during normal use. Frontend topics currently reflect Phase 2 clustering output, not final Phase 3 generation — see `docs/audit_and_next_steps.md` Section 7.2 for why titles/summaries look raw right now.
+The API runs on Render's free tier and sleeps after 15 minutes of inactivity (cold start ~30–60s on the next request); an external uptime pinger keeps it warm during normal use. `case_file_persist.py` now calls Gemini-grounded generation by default (25 Jul 2026) — this needs `db/migrations/008_topic_status_promotion.sql` applied to Supabase and `GEMINI_API_KEY` set as a repo secret before topics actually show as Live with real narrative titles; see `docs/audit_and_next_steps.md` Section 10 for the full status.
 
 ## Current foundation
 
@@ -68,9 +68,10 @@ Three GitHub Actions workflows run on a schedule once `SUPABASE_URL` and `SUPABA
 
 - [`ingest.yml`](.github/workflows/ingest.yml) — fetches enabled sources (`:17`).
 - [`embed.yml`](.github/workflows/embed.yml) — embeds newly persisted signals (`:35`), installs the `embeddings` extra.
-- [`case-file.yml`](.github/workflows/case-file.yml) — persists promotable case-file drafts (`:50`). **Currently uses the deterministic extractive builder only** — it is not yet wired to the Gemini-grounded generation path, so enabling it produces the same raw-titled Draft topics described in `docs/audit_and_next_steps.md` Section 7.2, just on a schedule. Fix that gap before leaning on this workflow for real published output.
+- [`case-file.yml`](.github/workflows/case-file.yml) — persists promotable case-file drafts (`:50`). Calls Gemini-grounded generation by default, falling back to the deterministic extractive builder per topic on any failure (see `pipeline/generation/grounded_case_file_draft.py`). Needs `GEMINI_API_KEY` as a repo secret and `db/migrations/008_topic_status_promotion.sql` applied to Supabase to actually produce Live topics with narrative titles — without either, it still runs safely, just via the extractive fallback.
+- [`lifecycle.yml`](.github/workflows/lifecycle.yml) — archives Live topics with no new signal in `ARCHIVE_AFTER_DAYS` (`shared/config.py`, currently 60). Runs once daily, not on the 2-hour cycle. Reopening a dormant topic needs no separate workflow — it happens automatically inside `case_file_persist.py`'s persist step whenever a promotable cluster matches an existing (possibly archived) topic's title.
 
-All three can also be run manually from the Actions tab (`workflow_dispatch`).
+All four can also be run manually from the Actions tab (`workflow_dispatch`).
 
 Optional source-failure and low-volume alerts need `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` added as GitHub repository secrets (and, for local runs, to `.env`).
 

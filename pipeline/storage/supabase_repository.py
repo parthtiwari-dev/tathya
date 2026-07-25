@@ -343,6 +343,36 @@ class SupabaseRepository:
         entries.sort(key=lambda entry: entry["timestamp"], reverse=True)
         return entries
 
+    def stale_live_topics(self, cutoff_iso: str) -> list[dict]:
+        """Live topics with no signal since cutoff -- pure read, no mutation.
+
+        Used by pipeline/lifecycle/activity_monitor.py. Archiving itself is a
+        separate call (archive_topics) so detection and mutation stay
+        independently testable.
+        """
+        query = urlencode(
+            {
+                "select": "id,slug,title,last_signal_at",
+                "status": "eq.live",
+                "last_signal_at": f"lt.{cutoff_iso}",
+            }
+        )
+        return self.get_table_rows(f"topics?{query}")
+
+    def archive_topics(self, topic_ids: list[str]) -> None:
+        """Bulk-set status='archived' for the given topic ids.
+
+        The reverse transition (archived -> live) is intentionally not a
+        method here -- it happens automatically inside
+        upsert_topic_cluster's on-conflict clause (db/migrations/008) the
+        next time a promotable cluster matches that topic's title, so it
+        needs no separate code path.
+        """
+        if not topic_ids:
+            return
+        id_filter = ",".join(topic_ids)
+        self._patch(f"topics?id=in.({id_filter})", {"status": "archived"})
+
     def public_corrections(self, limit: int = 50, offset: int = 0) -> tuple[list[dict], int | None]:
         query = urlencode(
             {
