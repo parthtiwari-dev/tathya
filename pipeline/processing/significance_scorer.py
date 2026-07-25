@@ -33,7 +33,17 @@ def score_topic(rows: list[dict], now: datetime | None = None) -> SignificanceBr
         score += 15
     if non_official_present:
         score += 10
-    promotable = len(canonical_rows) >= 3 and len(source_keys) >= 2 and official_present and non_official_present
+    # `promotable` used to gate whether a cluster ever went live at all --
+    # requiring 3+ canonical signals, 2+ distinct sources, and both an
+    # official and a non-official source present. Removed by deliberate
+    # decision (see docs/audit_and_next_steps.md Section 13): that gate
+    # could silence exactly the kind of story this project exists to
+    # surface -- one the government stays quiet on while citizens/media
+    # cover it heavily, or vice versa. Every cluster is promotable now;
+    # `score` (and the raw counts/flags below) are kept as-is so a future
+    # ranking/recommender system has real signal to sort *display order*
+    # by, without any of it gating *existence*.
+    promotable = True
     return SignificanceBreakdown(
         score=score,
         canonical_count=len(canonical_rows),

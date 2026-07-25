@@ -319,3 +319,17 @@ A second-order effect of this: `embed.yml` — which downloads roughly 2GB of Py
 2. Wire the existing embeddings into `cluster_signals()` as a similarity-based grouping path (e.g. group near-duplicate/high-cosine-similarity signals regardless of shared named entity), so clustering isn't solely dependent on the hand-seeded list — the more structural fix, and the one that would also finally make the embed.yml compute cost pull its weight for something beyond search.
 
 Neither is applied yet; this section is the diagnosis, not the resolution.
+
+---
+
+## 13. Decision: `promotable` gate removed — 25 July 2026
+
+Following from Section 10.3's flag and Section 12's real-data confirmation of it (RBI's own cluster had `official=True` but sat alone with 1 source; four other clusters had 2 sources but `official=False` on all of them — the two vocabularies never overlapped once on a real run), the decision was made to remove the gate rather than keep patching around it.
+
+**Change:** `pipeline/processing/significance_scorer.py`'s `promotable` is now always `True`. Nothing else was touched — `case_file_persist.py`'s `--promotable-only` flag, `upsert_topic_cluster`'s `p_promotable` parameter, and the SQL function's `status = case when p_promotable then 'live' else 'raw_cluster' end` logic are all still wired exactly as before. They just now always evaluate to "live," since the one input that used to sometimes make them false no longer does. No SQL migration, no workflow change, no Supabase action needed for this one.
+
+**Why this over patching the entity list or wiring in embeddings (Section 12's other two options):** those are still worth doing for clustering *quality* (whether two signals about the same real event get grouped together at all), but they don't address the deeper question Section 10.3 raised: should *any* fixed rule about official/non-official presence decide whether a real, adequately-covered story is allowed to exist on the site. Given the project's own founding motivation, the answer landed on no — existence should depend on the story being real and covered, not on whether the government chose to comment on it.
+
+**What this does not remove:** `score`, `canonical_count`, `independent_source_count`, `official_source_present`, and `media_or_citizen_source_present` are all still computed and stored exactly as before — nothing here throws away signal, it only stops that signal from gating existence. The explicit intent (stated by the project owner) is to build a ranking/recommender system on top of these fields later, to decide *display order and prominence*, not *presence*. That system does not exist yet — right now, ordering is whatever `cluster_signals()`'s `limit` and sort (`score` descending, then signal count) naturally produce, same as before this change.
+
+**New honest tradeoff worth watching:** with the gate gone, a thin cluster (e.g. one press release with no independent pickup at all) can now go fully "Live" rather than sitting as a "Draft" the way it would have before. Whether that's the right call long-term is exactly what a future ranking/prominence layer should resolve — for now, existence is unconditional and quality is left entirely to ordering, per the decision above.
