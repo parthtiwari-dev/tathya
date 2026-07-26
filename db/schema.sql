@@ -29,7 +29,6 @@ create function reject_snapshot_mutation() returns trigger language plpgsql as $
 create trigger snapshots_no_update before update or delete on snapshots for each row execute function reject_snapshot_mutation();
 create index signals_source_published_idx on signals (source_id, published_at desc);
 create index signals_canonical_idx on signals (duplicate_of_signal_id) where duplicate_of_signal_id is null;
-create unique index topics_title_idx on topics (title);
 create index topics_live_updated_idx on topics (status, last_signal_at desc);
 create index claims_topic_idx on claims (topic_id, created_at);
 create index events_topic_date_idx on events (topic_id, event_date);
@@ -196,6 +195,7 @@ declare
   v_last_seen timestamptz;
   v_signal_id uuid;
   v_status text;
+  v_slug text;
 begin
   select min(published_at), max(published_at)
   into v_first_seen, v_last_seen
@@ -207,15 +207,16 @@ begin
   end if;
 
   v_status := case when p_promotable then 'live' else 'raw_cluster' end;
+  v_slug := coalesce(p_slug, p_title);
 
   insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at, slug)
-  values (p_title, v_status::topic_status, v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, coalesce(p_slug, p_title))
-  on conflict (title) do update
-  set last_signal_at = greatest(topics.last_signal_at, excluded.last_signal_at),
+  values (p_title, v_status::topic_status, v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, v_slug)
+  on conflict (slug) where slug is not null do update
+  set title = excluded.title,
+      last_signal_at = greatest(topics.last_signal_at, excluded.last_signal_at),
       significance_score = greatest(topics.significance_score, excluded.significance_score),
       summary = coalesce(excluded.summary, topics.summary),
       summary_generated_at = case when excluded.summary is null then topics.summary_generated_at else now() end,
-      slug = coalesce(topics.slug, excluded.slug),
       status = case when excluded.status = 'live' then 'live'::topic_status else topics.status end
   returning id into v_topic_id;
 

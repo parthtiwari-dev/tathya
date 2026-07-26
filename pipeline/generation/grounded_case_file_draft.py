@@ -28,7 +28,6 @@ from pipeline.generation.case_file_builder import (
 )
 from pipeline.generation.gemini_case_file import generate_grounded_case_file
 from pipeline.processing.clusterer import TopicCluster
-from shared.slugify import slugify
 
 # Must match the claim_source_type values append_topic_claim's SQL enum
 # accepts (db/schema.sql) -- "opposition" exists in that enum too but the
@@ -116,7 +115,14 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
 
     grounded_draft = CaseFileDraft(
         title=grounded.title,
-        slug=slugify(grounded.title),
+        # Reuse the extractive draft's slug (derived from cluster.key, the
+        # stable anchor entity) rather than slugifying Gemini's headline.
+        # Gemini's title can legitimately reword between runs as a story
+        # develops; if slug tracked it too, upsert_topic_cluster's
+        # conflict-on-slug matching (db/migrations/009) would treat every
+        # reworded headline as a brand-new topic instead of updating the
+        # same one.
+        slug=extractive.slug,
         neutral_summary=grounded.neutral_summary,
         significance_score=extractive.significance_score,
         promotable=extractive.promotable,

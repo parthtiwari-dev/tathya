@@ -35,9 +35,13 @@ def ministry_label(name: str) -> str:
 def _taxonomy(row: dict) -> tuple[str, str, list[str]]:
     """Derive (ministry label, ministry slug, entityTags) from an embedded topic_entities list.
 
-    A topic with no linked ministry entity falls back to "Unclassified" rather
-    than a null/empty value, since Topic.ministry is a required field on the
-    frontend contract.
+    A topic with no linked ministry entity (e.g. one anchored on a person,
+    like "Amit Shah" or "Sonam Wangchuk") falls back to that anchor entity's
+    own name rather than a generic "Unclassified" label -- the topic is
+    genuinely about that entity, so naming it beats a placeholder that reads
+    like an error. `ministrySlug` still falls back to "unclassified" in this
+    case (left unlinked on the frontend), since ministry pages/filters are
+    keyed to actual ministry entities, not people.
     """
     links = row.get("topic_entities") or []
     entity_tags: list[str] = []
@@ -53,7 +57,8 @@ def _taxonomy(row: dict) -> tuple[str, str, list[str]]:
             ministry_name = name
             ministry_slug = entity.get("slug")
     if ministry_name is None:
-        return "Unclassified", "unclassified", entity_tags
+        label = entity_tags[0] if entity_tags else "Unclassified"
+        return label, "unclassified", entity_tags
     return ministry_label(ministry_name), ministry_slug or "unclassified", entity_tags
 
 

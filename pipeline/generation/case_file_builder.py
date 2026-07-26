@@ -75,7 +75,7 @@ def build_case_file_draft(cluster: TopicCluster) -> CaseFileDraft:
     rows = list(cluster.rows)
     claims = tuple(_claims(rows))
     return CaseFileDraft(
-        title=cluster.key,
+        title=_representative_title(rows, fallback=cluster.key),
         slug=slugify(cluster.key),
         neutral_summary=_summary(rows),
         significance_score=cluster.significance.score,
@@ -119,6 +119,24 @@ def _open_questions(claims: tuple[DraftClaim, ...]) -> list[DraftOpenQuestion]:
             related_claim_source_signal_id=first.source_signal_id,
         )
     ]
+
+
+def _representative_title(rows: list[dict], fallback: str) -> str:
+    """Pick a real headline for display.
+
+    `cluster.key` (the fallback) is the internal anchor -- an entity name
+    like "Reserve Bank of India" -- accurate as a stable topic identity but
+    not something anyone would recognize as a headline. Prefer the most
+    recent signal's own title instead, since RSS/press-release titles are
+    already real, human-written headlines. This is display-only: `slug`
+    stays derived from `cluster.key` regardless (see build_case_file_draft),
+    so this never affects topic identity/deduplication, only what's shown.
+    """
+    dated_titles = [(row.get("published_at") or "", row.get("title")) for row in rows if row.get("title")]
+    if not dated_titles:
+        return fallback
+    dated_titles.sort(key=lambda pair: pair[0], reverse=True)
+    return dated_titles[0][1]
 
 
 def _summary(rows: list[dict]) -> str:
