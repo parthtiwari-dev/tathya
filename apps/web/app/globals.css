@@ -77,3 +77,26 @@ body {
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Bento card entrance -- cards sit invisible until FeedBento flips
+   `revealed`, then pop in with a per-card stagger (animationDelay set
+   inline per card). Kept as a plain class rather than a Tailwind utility
+   since keyframes can't be expressed inline. */
+.reveal-card {
+  opacity: 0;
+}
+
+.reveal-card.is-revealed {
+  animation: bentoIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bentoIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

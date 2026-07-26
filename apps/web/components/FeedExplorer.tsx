@@ -5,6 +5,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import type { TopicSummary } from "@/lib/types";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { FeedItem } from "@/components/FeedItem";
+import { FeedBento } from "@/components/FeedBento";
 import { useTranslations } from "@/lib/i18n";
 
 export function FeedExplorer({
@@ -19,7 +20,7 @@ export function FeedExplorer({
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   function toggleMinistry(slug: string) {
     setSelectedMinistries((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]));
@@ -48,6 +49,7 @@ export function FeedExplorer({
 
   const liveTopics = filtered.filter((topic) => topic.status !== "archived");
   const archivedTopics = filtered.filter((topic) => topic.status === "archived");
+  const activeFilterCount = selectedMinistries.length + selectedStatuses.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
 
   const filterProps = {
     ministries,
@@ -70,56 +72,45 @@ export function FeedExplorer({
           <p className="mt-1 text-sm text-ink-secondary">{t("homeSubtitle")}</p>
         </div>
         <button
-          onClick={() => setMobileFiltersOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-ink-secondary lg:hidden"
+          onClick={() => setFiltersOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-ink-secondary transition-colors hover:border-ink-muted"
         >
           <SlidersHorizontal size={13} />
           {t("filtersButton")}
+          {activeFilterCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-paper">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
       </div>
 
-      <div className="flex gap-10">
-        <aside className="hidden w-56 shrink-0 pt-8 lg:block">
-          <div className="sticky top-24">
-            <FilterSidebar {...filterProps} />
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1">
-          <div className="mt-8">
-            {filtered.length === 0 ? (
-              <p className="text-sm text-ink-muted">{t("noTopicsMatch")}</p>
-            ) : (
-              <>
-                {liveTopics.length > 0 && (
-                  <div className="mb-2">
-                    {liveTopics.map((topic) => (
-                      <FeedItem key={topic.id} topic={topic} />
-                    ))}
-                  </div>
-                )}
-                {archivedTopics.length > 0 && (
-                  <div>
-                    <p className="mb-2 mt-6 text-xs font-medium uppercase tracking-wide text-ink-muted">
-                      {t("archivedSection")}
-                    </p>
-                    {archivedTopics.map((topic) => (
-                      <FeedItem key={topic.id} topic={topic} />
-                    ))}
-                  </div>
-                )}
-              </>
+      <div className="mt-8">
+        {filtered.length === 0 ? (
+          <p className="text-sm text-ink-muted">{t("noTopicsMatch")}</p>
+        ) : (
+          <>
+            {liveTopics.length > 0 && <FeedBento topics={liveTopics} />}
+            {archivedTopics.length > 0 && (
+              <div>
+                <p className="mb-2 mt-10 text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  {t("archivedSection")}
+                </p>
+                {archivedTopics.map((topic) => (
+                  <FeedItem key={topic.id} topic={topic} />
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
-      {mobileFiltersOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/30 lg:hidden">
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
           <div className="h-full w-full max-w-xs overflow-y-auto bg-paper p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm font-medium text-ink">{t("filtersButton")}</p>
-              <button onClick={() => setMobileFiltersOpen(false)} aria-label={t("closeFilters")}>
+              <button onClick={() => setFiltersOpen(false)} aria-label={t("closeFilters")}>
                 <X size={18} className="text-ink-secondary" />
               </button>
             </div>

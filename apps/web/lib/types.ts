@@ -124,5 +124,6 @@ export interface TopicSummary {
   ministrySlug: string;
   entityTags: string[];
   lastSignalAt: string;
+  significanceScore: number;
   sourceCount: SourceCount;
 }
