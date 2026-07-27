@@ -38,7 +38,9 @@ class GroundedFact(BaseModel):
 
 class GroundedCaseFile(BaseModel):
     title: str
+    title_hi: str = Field(description="Accurate Hindi translation of `title` -- a real headline, not a literal word-for-word translation, but never adding or dropping facts from the English version.")
     neutral_summary: str = Field(description="One neutral paragraph grounded only in supplied evidence.")
+    neutral_summary_hi: str = Field(description="Accurate Hindi translation of `neutral_summary`, same facts, same neutrality, natural Hindi phrasing.")
     events: list[GroundedEvent]
     claims: list[GroundedClaim]
     verifiable_facts: list[GroundedFact]
@@ -74,6 +76,10 @@ def _prompt(draft: CaseFileDraft) -> str:
         "You build non-partisan civic case files. Use only the supplied evidence. "
         "Do not add facts from memory. Do not decide truth or falsehood. "
         "Every claim, event, and fact must preserve a source URL and quoted span from the evidence. "
+        "For title_hi and neutral_summary_hi: produce an accurate, natural Hindi translation of title and "
+        "neutral_summary respectively -- same facts, same neutral tone, no additions or omissions. "
+        "Do not translate quoted_span, claim_text, event descriptions, or fact_text -- leave those in "
+        "whatever language the source evidence is in; only title_hi and neutral_summary_hi are translated. "
         "Return valid JSON matching the schema.\n\n"
         f"EVIDENCE_DRAFT:\n{json.dumps(asdict(draft), ensure_ascii=False, indent=2)}"
     )

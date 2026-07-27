@@ -124,7 +124,7 @@ class SupabaseRepository:
         self, limit: int = 20, offset: int = 0, ministry_slug: str | None = None
     ) -> tuple[list[dict], int | None]:
         params = {
-            "select": f"id,slug,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
+            "select": f"id,slug,title,title_hi,status,first_seen,last_signal_at,significance_score,summary,summary_hi,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
             "order": "last_signal_at.desc",
             "limit": str(limit),
             "offset": str(offset),
@@ -156,7 +156,7 @@ class SupabaseRepository:
         query = urlencode(
             {
                 "slug": f"eq.{slug}",
-                "select": f"id,slug,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
+                "select": f"id,slug,title,title_hi,status,first_seen,last_signal_at,significance_score,summary,summary_hi,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
             }
         )
         rows = self.get_table_rows(f"topics?{query}")
@@ -388,7 +388,7 @@ class SupabaseRepository:
         query = urlencode(
             {
                 "id": f"eq.{topic_id}",
-                "select": f"id,slug,title,status,first_seen,last_signal_at,significance_score,summary,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
+                "select": f"id,slug,title,title_hi,status,first_seen,last_signal_at,significance_score,summary,summary_hi,summary_generated_at,{_TOPIC_TAXONOMY_SELECT}",
             }
         )
         topic = self.get_table_rows(f"topics?{query}")
@@ -462,6 +462,8 @@ class SupabaseRepository:
                 "p_summary": draft.neutral_summary,
                 "p_slug": draft.slug,
                 "p_promotable": draft.promotable,
+                "p_title_hi": draft.title_hi,
+                "p_summary_hi": draft.summary_hi,
             },
         )
         if not topic_id:

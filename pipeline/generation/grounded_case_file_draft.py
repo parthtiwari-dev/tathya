@@ -135,5 +135,7 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
         # Same reasoning as case_file_builder.py: contradiction detection
         # needs cross-signal semantic comparison neither path does yet.
         contradictions=(),
+        title_hi=grounded.title_hi,
+        summary_hi=grounded.neutral_summary_hi,
     )
     return grounded_draft, "grounded"

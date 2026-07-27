@@ -13,7 +13,7 @@ create table signals (id uuid primary key default gen_random_uuid(), source_id u
 create table snapshots (id uuid primary key default gen_random_uuid(), signal_id uuid not null unique references signals(id), captured_at timestamptz not null, raw_content text not null, content_hash char(64) not null, unique (signal_id, content_hash));
 alter table signals add constraint signals_snapshot_id_fkey foreign key (snapshot_id) references snapshots(id);
 create table entities (id uuid primary key default gen_random_uuid(), name text not null, type text not null check (type in ('person', 'ministry', 'scheme', 'law', 'place')), aliases jsonb not null default '[]'::jsonb, slug text, unique (name, type));
-create table topics (id uuid primary key default gen_random_uuid(), title text not null, status topic_status not null default 'raw_cluster', first_seen timestamptz not null default now(), last_signal_at timestamptz not null, significance_score numeric not null default 0, summary text, summary_generated_at timestamptz, slug text);
+create table topics (id uuid primary key default gen_random_uuid(), title text not null, status topic_status not null default 'raw_cluster', first_seen timestamptz not null default now(), last_signal_at timestamptz not null, significance_score numeric not null default 0, summary text, summary_generated_at timestamptz, slug text, title_hi text, summary_hi text);
 create table topic_signals (topic_id uuid references topics(id), signal_id uuid references signals(id), primary key (topic_id, signal_id));
 create table events (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), event_date date not null, description text not null, source_signal_ids uuid[] not null, created_at timestamptz not null default now());
 create table claims (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), claim_text text not null, source_type claim_source_type not null, source_signal_id uuid not null references signals(id), quoted_span text not null, created_at timestamptz not null default now());
@@ -187,7 +187,9 @@ create function upsert_topic_cluster(
   p_significance_score numeric,
   p_summary text default null,
   p_slug text default null,
-  p_promotable boolean default false
+  p_promotable boolean default false,
+  p_title_hi text default null,
+  p_summary_hi text default null
 ) returns uuid language plpgsql as $$
 declare
   v_topic_id uuid;
@@ -209,10 +211,12 @@ begin
   v_status := case when p_promotable then 'live' else 'raw_cluster' end;
   v_slug := coalesce(p_slug, p_title);
 
-  insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at, slug)
-  values (p_title, v_status::topic_status, v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, v_slug)
+  insert into topics (title, status, first_seen, last_signal_at, significance_score, summary, summary_generated_at, slug, title_hi, summary_hi)
+  values (p_title, v_status::topic_status, v_first_seen, v_last_seen, p_significance_score, p_summary, case when p_summary is null then null else now() end, v_slug, p_title_hi, p_summary_hi)
   on conflict (slug) where slug is not null do update
   set title = excluded.title,
+      title_hi = coalesce(excluded.title_hi, topics.title_hi),
+      summary_hi = coalesce(excluded.summary_hi, topics.summary_hi),
       last_signal_at = greatest(topics.last_signal_at, excluded.last_signal_at),
       significance_score = greatest(topics.significance_score, excluded.significance_score),
       summary = coalesce(excluded.summary, topics.summary),

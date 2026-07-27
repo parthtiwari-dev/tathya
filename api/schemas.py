@@ -32,7 +32,9 @@ class TopicSummary(BaseModel):
     id: str
     slug: str
     title: str
+    titleHi: Optional[str] = None
     summary: Optional[str] = None
+    summaryHi: Optional[str] = None
     status: str
     ministry: str
     ministrySlug: str
@@ -122,7 +124,9 @@ class TopicDetail(BaseModel):
     id: str
     slug: str
     title: str
+    titleHi: Optional[str] = None
     summary: Optional[str] = None
+    summaryHi: Optional[str] = None
     status: str
     ministry: str
     ministrySlug: str

@@ -69,6 +69,14 @@ class CaseFileDraft:
     ministry_entity_name: str | None
     open_questions: tuple[DraftOpenQuestion, ...] = ()
     contradictions: tuple[DraftContradiction, ...] = ()
+    # Hindi versions of title/neutral_summary only -- the highest-visibility
+    # display text (feed cards, topic page headline). Claims/events/facts
+    # deliberately stay English-only for now; see db/migrations/010 for why.
+    # title_hi is None from the extractive path (a real headline can't be
+    # honestly machine-translated without an LLM); summary_hi is always
+    # populated here since it's built from a fixed template (_summary_hi).
+    title_hi: str | None = None
+    summary_hi: str | None = None
 
 
 def build_case_file_draft(cluster: TopicCluster) -> CaseFileDraft:
@@ -91,6 +99,8 @@ def build_case_file_draft(cluster: TopicCluster) -> CaseFileDraft:
         # fabricated/inferred content). Left empty until a grounded generation
         # step (e.g. gemini_case_file.py) is wired into persistence.
         contradictions=(),
+        title_hi=None,
+        summary_hi=_summary_hi(rows),
     )
 
 
@@ -145,6 +155,20 @@ def _summary(rows: list[dict]) -> str:
     titles = [row.get("title") for row in rows if row.get("title")]
     representative = titles[0] if titles else "source material"
     return f"{signal_count} canonical signals from {source_count} source(s) currently cluster around: {representative}"
+
+
+def _summary_hi(rows: list[dict]) -> str:
+    """Hindi mirror of _summary(). Plain template substitution, no LLM --
+    the sentence structure is fixed, only the numbers and the (English)
+    representative title are inserted, so this is honest to translate
+    mechanically. The representative title itself is left in its original
+    language rather than mistranslated word-for-word.
+    """
+    source_count = len({_source_key(row) for row in rows})
+    signal_count = len(rows)
+    titles = [row.get("title") for row in rows if row.get("title")]
+    representative = titles[0] if titles else "स्रोत सामग्री"
+    return f"{signal_count} प्रामाणिक संकेत {source_count} स्रोत(स्रोतों) से इस विषय पर केंद्रित हैं: {representative}"
 
 
 def _events(rows: list[dict]) -> list[DraftEvent]:

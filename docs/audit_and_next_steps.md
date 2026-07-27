@@ -336,6 +336,22 @@ Following from Section 10.3's flag and Section 12's real-data confirmation of it
 
 ---
 
+## 15. Hindi for topic title/summary (scoped) — 25 July 2026
+
+Scope decision made explicitly before writing any code: title/summary get real Hindi now; claim text, event descriptions, and verifiable facts stay English-only for this pass, since those are the literal quoted/verifiable units this project exists to protect, and translating them accurately deserves the same grounded-generation care as the claims themselves, not a rushed pass alongside simpler topic-level text.
+
+**DB:** `db/migrations/010_hindi_topic_content.sql` (mirrored into `schema.sql`) adds `topics.title_hi` and `topics.summary_hi`, and extends `upsert_topic_cluster` with `p_title_hi`/`p_summary_hi` (both optional, coalesced against the existing value on conflict so a later run without Hindi never blanks out Hindi text from an earlier run). **Action needed:** run this migration once in Supabase, same as 008/009 before it.
+
+**Grounded path (Gemini):** `gemini_case_file.py`'s `GroundedCaseFile` schema now requests `title_hi` and `neutral_summary_hi` alongside the English fields, with explicit prompt instructions to translate only those two fields and leave claim/event/fact text untouched in its original language. `grounded_case_file_draft.py` plumbs both through into `CaseFileDraft`.
+
+**Extractive fallback path:** per the decision to translate the mechanical template too, `case_file_builder.py` now has `_summary_hi()` — a plain-template Hindi mirror of `_summary()` (no LLM, just Hindi phrasing with the same numbers substituted in). `title_hi` stays `None` on this path deliberately: the title is now a real signal's actual headline (Section 14.1), and there's no honest way to machine-translate arbitrary free-text headlines without an LLM — pretending a dictionary/template could do that would be exactly the kind of low-quality translation this project's mission argues against.
+
+**API + frontend:** `title_hi`/`summary_hi` flow through every topic-reading `select` in `supabase_repository.py`, `api/schemas.py` (`TopicSummary`/`TopicDetail`), `api/mappers.py`, `lib/types.ts`, and a new shared `lib/localizedText.ts` helper used by `BentoCard`, `FeedItem`, and `TopicPageBody`. When Hindi mode is on but a given topic has no Hindi title yet (i.e. it went through extractive fallback), the English headline shows with a small "EN" marker rather than silently mixing languages — honesty over a falsely-complete-looking toggle. `TopicPageBody`'s English-only notice was narrowed to correctly say claims/timeline/evidence are English-only, no longer implying summary/title are too. Also fixed in passing: `TopicPageBody`'s hardcoded `statusText`/`contentNoticeText` objects (an instance of the i18n-duplication pattern flagged in Section 10.4) now read from the central `lib/i18n.tsx` dict instead.
+
+**Still open, not addressed here:** Section 14.4's observation that grounded generation appears to never actually fire (every persisted topic so far went through extractive fallback) means Hindi title/summary won't show up in practice until that's resolved — checking `GEMINI_API_KEY` is set as a GitHub Actions secret for `case-file.yml` is the first thing to check. Until then, every topic will show the "EN" fallback marker in Hindi mode, which is the correct, honest behavior given the current state — not a bug in this Hindi work itself.
+
+---
+
 ## 14. Real headlines + honest ministry fallback (see chat for full detail) — 25 July 2026
 
 Fixed: real headline via a new `_representative_title()` in `case_file_builder.py` (picks the most recent signal's own title instead of the raw cluster-key entity name). This required decoupling topic identity from `title`: `db/migrations/009_topic_identity_on_slug.sql` (mirrored into `schema.sql`) moves `upsert_topic_cluster`'s conflict target from `title` to `slug`, drops the old `topics_title_idx` unique constraint, and adds `title = excluded.title` to the update so headlines actually refresh over time instead of forking duplicate topics. Action needed: run this migration once in the Supabase SQL editor (safe to re-run). No data wipe needed -- existing slugs already match. Also fixed pre-emptively: `grounded_case_file_draft.py` now reuses the extractive draft's stable slug instead of deriving one from Gemini's headline, so the same fork risk can't happen once grounded generation starts working.

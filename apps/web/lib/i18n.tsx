@@ -62,8 +62,12 @@ export const dict: Dictionary = {
   historyHeading: { en: "History — every addition and correction, never rewritten", hi: "इतिहास — हर जोड़ और सुधार, कभी फिर से नहीं लिखा गया" },
   reportIssue: { en: "Report an extraction issue", hi: "निष्कर्षण त्रुटि की रिपोर्ट करें" },
   contentNotTranslated: {
-    en: "This topic's content (summary, claims, quotes) is only available in English right now. Hindi case-file generation is a later phase.",
-    hi: "इस विषय की सामग्री (सारांश, दावे, उद्धरण) अभी केवल अंग्रेज़ी में उपलब्ध है। हिंदी केस-फ़ाइल जनरेशन बाद के चरण में आएगी।",
+    en: "This topic's claims, timeline, and quoted evidence are only available in English right now. Hindi translation for those is a later phase.",
+    hi: "इस विषय के दावे, समयरेखा और उद्धृत साक्ष्य अभी केवल अंग्रेज़ी में उपलब्ध हैं। उनके लिए हिंदी अनुवाद बाद के चरण में आएगा।",
+  },
+  titleNotTranslatedYet: {
+    en: "Hindi translation not yet available for this headline — showing English.",
+    hi: "इस शीर्षक के लिए हिंदी अनुवाद अभी उपलब्ध नहीं है — अंग्रेज़ी दिखाई जा रही है।",
   },
   introLine1: { en: "We don't tell you who's right.", hi: "हम यह नहीं बताते कि सही कौन है।" },
   introLine2: {

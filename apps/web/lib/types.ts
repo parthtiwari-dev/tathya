@@ -97,7 +97,9 @@ export interface Topic {
   id: string;
   slug: string;
   title: string;
+  titleHi: string | null;
   summary: string;
+  summaryHi: string | null;
   status: TopicStatus;
   ministry: string;
   ministrySlug: string;
@@ -118,7 +120,9 @@ export interface TopicSummary {
   id: string;
   slug: string;
   title: string;
+  titleHi: string | null;
   summary: string;
+  summaryHi: string | null;
   status: TopicStatus;
   ministry: string;
   ministrySlug: string;

@@ -5,6 +5,7 @@ import type { TopicSummary } from "@/lib/types";
 import { relativeTime } from "@/lib/format";
 import { useLanguage, useTranslations } from "@/lib/i18n";
 import { accentColorFromLabel } from "@/lib/accentColor";
+import { localizedText } from "@/lib/localizedText";
 
 export type BentoTier = "hero" | "wide" | "compact";
 
@@ -30,6 +31,8 @@ export function BentoCard({
   const totalSources = topic.sourceCount.official + topic.sourceCount.media + topic.sourceCount.citizen;
   const sourcesWord = lang === "hi" ? "स्रोत" : totalSources === 1 ? "source" : "sources";
   const accent = accentColorFromLabel(topic.entityTags[0] || topic.ministry);
+  const title = localizedText(topic.title, topic.titleHi, lang);
+  const summary = localizedText(topic.summary, topic.summaryHi, lang);
 
   return (
     <Link
@@ -53,7 +56,12 @@ export function BentoCard({
           tier === "hero" ? "text-2xl sm:text-3xl" : tier === "wide" ? "text-lg sm:text-xl" : "text-base"
         }`}
       >
-        {topic.title}
+        {title.text}
+        {title.isFallback && (
+          <span className="ml-2 align-middle text-[10px] font-sans font-normal uppercase tracking-wide text-ink-muted" title={t("titleNotTranslatedYet")}>
+            EN
+          </span>
+        )}
       </h2>
 
       {tier !== "compact" && (
@@ -62,7 +70,7 @@ export function BentoCard({
             tier === "hero" ? "max-w-3xl text-[15px] leading-relaxed" : "text-sm leading-relaxed line-clamp-2"
           }`}
         >
-          {topic.summary}
+          {summary.text}
         </p>
       )}
 

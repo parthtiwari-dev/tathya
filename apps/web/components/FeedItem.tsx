@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { TopicSummary } from "@/lib/types";
 import { relativeTime } from "@/lib/format";
 import { useLanguage, useTranslations } from "@/lib/i18n";
+import { localizedText } from "@/lib/localizedText";
 
 export function FeedItem({ topic }: { topic: TopicSummary }) {
   const t = useTranslations();
@@ -11,6 +12,8 @@ export function FeedItem({ topic }: { topic: TopicSummary }) {
   const totalSources =
     topic.sourceCount.official + topic.sourceCount.media + topic.sourceCount.citizen;
   const sourcesWord = lang === "hi" ? "स्रोत" : totalSources === 1 ? "source" : "sources";
+  const title = localizedText(topic.title, topic.titleHi, lang);
+  const summary = localizedText(topic.summary, topic.summaryHi, lang);
 
   return (
     <Link
@@ -25,11 +28,16 @@ export function FeedItem({ topic }: { topic: TopicSummary }) {
       </div>
 
       <h2 className="mt-2 font-serif text-lg font-medium leading-snug text-ink transition-colors group-hover:text-accent sm:text-xl">
-        {topic.title}
+        {title.text}
+        {title.isFallback && (
+          <span className="ml-2 align-middle text-[10px] font-sans font-normal uppercase tracking-wide text-ink-muted" title={t("titleNotTranslatedYet")}>
+            EN
+          </span>
+        )}
       </h2>
 
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-ink-secondary">
-        {topic.summary}
+        {summary.text}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
