@@ -48,11 +48,16 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
 
     try:
         grounded = generate_grounded_case_file(extractive)
-    except Exception:
-        # Covers: missing GEMINI_API_KEY, missing generation extra installed,
-        # network/API failure, or the model returning JSON that fails
-        # GroundedCaseFile validation. All of these should degrade to the
-        # deterministic draft, never crash the persist run for one topic.
+    except Exception as error:
+        # Every topic silently falling back with no visibility into why was
+        # itself the bug (see docs/audit_and_next_steps.md Section 17) --
+        # this print is the fix. Still degrades gracefully rather than
+        # crashing the run for one topic; it just no longer does so in the
+        # dark. Goes to stdout (not raised/logged as an error level) so it
+        # shows up in the same case-file.yml log the per-topic persist lines
+        # already print to, without failing the job over one topic's
+        # generation issue.
+        print(f"[grounded generation failed] {cluster.key!r}: {type(error).__name__}: {error}")
         return extractive, "extractive_fallback"
 
     url_to_row = {row.get("url"): row for row in cluster.rows if row.get("url")}
@@ -114,6 +119,11 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
         # Every returned URL failed to match a real signal (e.g. Gemini
         # altered/normalized a URL). Trust the deterministic extractive draft
         # rather than persist an effectively-empty "grounded" topic.
+        print(
+            f"[grounded generation empty after URL matching] {cluster.key!r}: "
+            f"Gemini returned {len(grounded.events)} events / {len(grounded.claims)} claims / "
+            f"{len(grounded.verifiable_facts)} facts, none matched a source_url in the cluster's own signals"
+        )
         return extractive, "extractive_fallback"
 
     grounded_draft = CaseFileDraft(

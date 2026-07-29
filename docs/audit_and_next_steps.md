@@ -372,6 +372,20 @@ Following user feedback that a language toggle covering only title/summary didn'
 
 ---
 
+## 17. Grounded generation still never fires, even with `GEMINI_API_KEY` set — root cause was a silent `except Exception` — 25 July 2026
+
+A real run after the user added `GEMINI_API_KEY` as a repo secret: `Total case-file drafts persisted: 5 (grounded: 0, extractive fallback: 5, extractive-only: 0)`. Still 100% extractive fallback. Checked the two most likely causes first rather than guessing blind:
+- `case-file.yml` *does* correctly pass `GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}` through to the job's environment -- ruled out.
+- `gemini-2.5-flash` (the default model name in `gemini_case_file.py`) is confirmed still live and available as of this week (checked against Google's own docs) -- ruled out.
+
+The actual bug: `grounded_case_file_draft.py`'s `build_grounded_case_file_draft()` had a bare `except Exception: return extractive, "extractive_fallback"` with **no logging of the exception at all**. Whatever was actually going wrong -- wrong secret value, a validation error against the `GroundedCaseFile` schema, an API-side rejection, anything -- has been completely invisible since the day this fallback was written. This was arguably a bigger problem than whatever the underlying failure turns out to be: it made every previous round of "why isn't Gemini working" pure guesswork.
+
+**Fixed:** both failure points (`generate_grounded_case_file()` raising, and the "Gemini returned content but none of it matched a real signal URL" case) now `print()` the actual exception type/message or mismatch details, prefixed `[grounded generation failed]` / `[grounded generation empty after URL matching]`. Behavior is otherwise unchanged -- still degrades to extractive per-topic rather than failing the whole run, exactly as before. No DB or workflow change needed for this fix; it's pure Python, takes effect on the next run automatically.
+
+**Next step, concrete:** re-trigger `case-file.yml` and paste back the new `[grounded generation failed]` lines. That will finally show the real cause instead of another round of elimination.
+
+---
+
 ## 14. Real headlines + honest ministry fallback (see chat for full detail) — 25 July 2026
 
 Fixed: real headline via a new `_representative_title()` in `case_file_builder.py` (picks the most recent signal's own title instead of the raw cluster-key entity name). This required decoupling topic identity from `title`: `db/migrations/009_topic_identity_on_slug.sql` (mirrored into `schema.sql`) moves `upsert_topic_cluster`'s conflict target from `title` to `slug`, drops the old `topics_title_idx` unique constraint, and adds `title = excluded.title` to the update so headlines actually refresh over time instead of forking duplicate topics. Action needed: run this migration once in the Supabase SQL editor (safe to re-run). No data wipe needed -- existing slugs already match. Also fixed pre-emptively: `grounded_case_file_draft.py` now reuses the extractive draft's stable slug instead of deriving one from Gemini's headline, so the same fork risk can't happen once grounded generation starts working.
