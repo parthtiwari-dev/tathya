@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from pipeline.generation.case_file_builder import CaseFileDraft
 
 
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
 
 
 class GroundedClaim(BaseModel):

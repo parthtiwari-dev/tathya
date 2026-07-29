@@ -384,6 +384,8 @@ The actual bug: `grounded_case_file_draft.py`'s `build_grounded_case_file_draft(
 
 **Next step, concrete:** re-trigger `case-file.yml` and paste back the new `[grounded generation failed]` lines. That will finally show the real cause instead of another round of elimination.
 
+**Resolution, same day:** the diagnostic worked immediately -- every single failure was the identical error: `404 NOT_FOUND: This model models/gemini-2.5-flash is no longer available to new users`. Not a secret/wiring issue, not a schema issue -- the user's Gemini API key is on a newer Google account, and Google has rolled `gemini-2.5-flash` off for new users specifically while keeping it for existing ones (the model itself still shows as generally listed elsewhere, which is exactly why the earlier general-availability check in this section didn't catch it -- "still exists" and "available to this specific key" turned out to be different questions). Confirmed `gemini-3.5-flash` as the current GA replacement (matches the exact `client.models.generate_content(model=..., contents=...)` call pattern already used here) and updated `DEFAULT_GEMINI_MODEL` in `gemini_case_file.py`. Pure Python constant change -- no migration, no workflow edit, takes effect next run. `GEMINI_MODEL` env var already existed as an override if this ever needs changing again without a code deploy.
+
 ---
 
 ## 14. Real headlines + honest ministry fallback (see chat for full detail) — 25 July 2026
