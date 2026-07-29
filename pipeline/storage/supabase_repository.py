@@ -476,6 +476,7 @@ class SupabaseRepository:
                     "p_event_date": event.event_date,
                     "p_description": event.description,
                     "p_source_signal_ids": list(event.source_signal_ids),
+                    "p_description_hi": event.description_hi,
                 },
             )
         claim_id_by_signal_id: dict[str, str] = {}
@@ -488,6 +489,7 @@ class SupabaseRepository:
                     "p_source_type": claim.source_type,
                     "p_source_signal_id": claim.source_signal_id,
                     "p_quoted_span": claim.quoted_span,
+                    "p_claim_text_hi": claim.claim_text_hi,
                 },
             )
             if isinstance(claim_id, str):
@@ -501,6 +503,7 @@ class SupabaseRepository:
                     "p_primary_doc_url": fact.primary_doc_url,
                     "p_doc_type": fact.doc_type,
                     "p_quoted_span": fact.quoted_span,
+                    "p_fact_text_hi": fact.fact_text_hi,
                 },
             )
         if draft.related_entities:
@@ -516,6 +519,7 @@ class SupabaseRepository:
             {
                 "topic_id": topic_id,
                 "question": open_question.question,
+                "question_hi": open_question.question_hi,
                 "related_claim_id": claim_id_by_signal_id.get(open_question.related_claim_source_signal_id),
             }
             for open_question in open_questions
@@ -529,9 +533,11 @@ class SupabaseRepository:
                 "topic_id": topic_id,
                 "entity_name": contradiction.entity_name,
                 "statement_a_text": contradiction.statement_a_text,
+                "statement_a_text_hi": contradiction.statement_a_text_hi,
                 "statement_a_date": contradiction.statement_a_date,
                 "statement_a_source_signal_id": contradiction.statement_a_source_signal_id,
                 "statement_b_text": contradiction.statement_b_text,
+                "statement_b_text_hi": contradiction.statement_b_text_hi,
                 "statement_b_date": contradiction.statement_b_date,
                 "statement_b_source_signal_id": contradiction.statement_b_source_signal_id,
             }

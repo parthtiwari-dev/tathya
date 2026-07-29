@@ -352,6 +352,26 @@ Scope decision made explicitly before writing any code: title/summary get real H
 
 ---
 
+## 16. Hindi extended to claims, events, facts, open questions — 25 July 2026
+
+Following user feedback that a language toggle covering only title/summary didn't feel like "switching to Hindi" in any real sense, extended the same pattern to the rest of the topic detail page.
+
+**DB:** `db/migrations/011_hindi_claims_events_facts.sql` (mirrored into `schema.sql`) adds `claim_text_hi`, `description_hi`, `fact_text_hi`, `question_hi`, `statement_a_text_hi`/`statement_b_text_hi` to claims/events/verifiable_facts/open_questions/contradictions, and extends `append_topic_claim`/`append_topic_event`/`append_topic_fact` with the matching optional params (coalesced on conflict, same pattern as 010). `open_questions`/`contradictions` go through plain REST inserts, not RPC, so those just got the new fields added to their payload dicts directly. **Action needed:** run this migration once in Supabase.
+
+**The one rule enforced everywhere in this pass: `quoted_span` is never translated.** It's a direct quote from a real source, not Gemini's or the extractive builder's own text -- translating a quote changes what was actually said into something that reads as attributed but isn't verbatim. Only the surrounding description/claim/fact text (Gemini's own composed paraphrase in the grounded path) gets a Hindi sibling.
+
+**Extractive-fallback path stays English for claim/event/fact text, by necessity not choice:** `DraftClaim.claim_text` and `DraftFact.fact_text` are literally the same string as `quoted_span` on this path (see `case_file_builder.py`'s `_claims`/`_facts` -- both set from the same `span` variable), and `DraftEvent.description` is a raw sentence excerpt, not a paraphrase. There's no honest field to translate independently of the quote itself without an LLM doing real translation -- which is exactly the grounded path's job once it's actually running. `open_questions` are the one exception: they're a fixed hand-authored template sentence (see `_open_questions`), so a Hindi mirror template was straightforward to add, and now populates on both paths.
+
+**Gemini schema:** `GroundedClaim`/`GroundedEvent`/`GroundedFact` in `gemini_case_file.py` now request `claim_text_hi`/`description_hi`/`fact_text_hi`, with the prompt explicitly repeating the quoted_span rule so it isn't just assumed from field naming.
+
+**API + frontend:** all five detail components (`ClaimsLedger`, `Timeline`, `VerifiableFactsPanel`, `OpenQuestions`, `Contradictions`) now use the same `localizedText()` + "EN" fallback-marker pattern as the topic header. `TopicPageBody`'s blanket "this topic's content is English-only" notice was removed entirely -- it's no longer accurate now that most fields *can* have Hindi, and per-item honest fallback markers make a global caveat redundant.
+
+**Deliberately not done in this pass, flagged directly to the user rather than assumed:** the About/mission-ethics page. `apps/web/app/about/page.tsx` already contains a deliberate prior decision -- its own Hindi notice states a document this important to trust deserves a real human translation, not an automated one. Auto-generating a translation of it now would be exactly the thing that notice argues against, applied to the single document most responsible for the site's credibility. Left as-is pending an explicit decision from the user on whether an AI-generated (careful, but still AI-generated) translation is acceptable there or not.
+
+**Update, same day:** asked directly; the user chose to proceed with an AI translation now rather than wait for a human one. All 7 paragraphs translated and wired in, replacing the old "English only" notice entirely (no "machine-translated, pending review" caveat -- that was offered as an explicit option and not the one chosen). Worth remembering this was a conscious tradeoff, not a default: revisit if a human reviewer ever becomes available, since the original reasoning for holding off (this is the page carrying the most trust weight) hasn't gone away, it was just weighed against launch practicality and decided the other way.
+
+---
+
 ## 14. Real headlines + honest ministry fallback (see chat for full detail) — 25 July 2026
 
 Fixed: real headline via a new `_representative_title()` in `case_file_builder.py` (picks the most recent signal's own title instead of the raw cluster-key entity name). This required decoupling topic identity from `title`: `db/migrations/009_topic_identity_on_slug.sql` (mirrored into `schema.sql`) moves `upsert_topic_cluster`'s conflict target from `title` to `slug`, drops the old `topics_title_idx` unique constraint, and adds `title = excluded.title` to the update so headlines actually refresh over time instead of forking duplicate topics. Action needed: run this migration once in the Supabase SQL editor (safe to re-run). No data wipe needed -- existing slugs already match. Also fixed pre-emptively: `grounded_case_file_draft.py` now reuses the extractive draft's stable slug instead of deriving one from Gemini's headline, so the same fork risk can't happen once grounded generation starts working.

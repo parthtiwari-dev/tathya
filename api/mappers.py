@@ -110,6 +110,7 @@ def to_claim(row: dict) -> Claim:
     return Claim(
         id=row["id"],
         claimText=row["claim_text"],
+        claimTextHi=row.get("claim_text_hi"),
         sourceType=_CLAIM_SOURCE_TYPE_DB_TO_API.get(db_source_type, db_source_type),
         sourceSignalId=row["source_signal_id"],
         quotedSpan=row["quoted_span"],
@@ -128,6 +129,7 @@ def to_event(row: dict) -> TimelineEvent:
         id=row["id"],
         eventDate=row["event_date"],
         description=row["description"],
+        descriptionHi=row.get("description_hi"),
         sourceSignalIds=row.get("source_signal_ids") or [],
     )
 
@@ -136,6 +138,7 @@ def to_fact(row: dict) -> VerifiableFact:
     return VerifiableFact(
         id=row["id"],
         factText=row["fact_text"],
+        factTextHi=row.get("fact_text_hi"),
         primaryDocUrl=row["primary_doc_url"],
         docType=row["doc_type"],
         quotedSpan=row["quoted_span"],
@@ -161,7 +164,12 @@ def to_relation(row: dict) -> TopicRelation:
 
 
 def to_open_question(row: dict) -> OpenQuestion:
-    return OpenQuestion(id=row["id"], question=row["question"], relatedClaimId=row.get("related_claim_id"))
+    return OpenQuestion(
+        id=row["id"],
+        question=row["question"],
+        questionHi=row.get("question_hi"),
+        relatedClaimId=row.get("related_claim_id"),
+    )
 
 
 def to_contradiction(row: dict) -> Contradiction:
@@ -174,12 +182,14 @@ def to_contradiction(row: dict) -> Contradiction:
         entity=row["entity_name"],
         statementA=ContradictionStatement(
             text=row["statement_a_text"],
+            textHi=row.get("statement_a_text_hi"),
             date=row["statement_a_date"],
             sourceName=source_a.get("name", ""),
             sourceUrl=signal_a.get("url", ""),
         ),
         statementB=ContradictionStatement(
             text=row["statement_b_text"],
+            textHi=row.get("statement_b_text_hi"),
             date=row["statement_b_date"],
             sourceName=source_b.get("name", ""),
             sourceUrl=signal_b.get("url", ""),

@@ -42,12 +42,6 @@ export function TopicPageBody({ topic }: { topic: Topic }) {
 
       <p className="mt-4 text-[16px] leading-relaxed text-ink-secondary sm:text-[17px]">{summary.text}</p>
 
-      {lang === "hi" && (
-        <p className="mt-3 rounded-md border border-dashed border-border bg-surface p-3 text-xs text-ink-muted">
-          {t("contentNotTranslated")}
-        </p>
-      )}
-
       <div className="mt-3">
         <TrustBreakdown counts={topic.sourceCount} lang={lang} />
       </div>

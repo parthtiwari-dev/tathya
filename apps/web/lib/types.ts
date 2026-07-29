@@ -23,6 +23,7 @@ export type HistoryEntryType =
 export interface Claim {
   id: string;
   claimText: string;
+  claimTextHi: string | null;
   sourceType: ClaimSourceType;
   quotedSpan: string;
   sourceName: string;
@@ -34,14 +35,15 @@ export interface Claim {
 export interface OpenQuestion {
   id: string;
   question: string;
+  questionHi: string | null;
   relatedClaimId: string;
 }
 
 export interface Contradiction {
   id: string;
   entity: string;
-  statementA: { text: string; date: string; sourceName: string; sourceUrl: string };
-  statementB: { text: string; date: string; sourceName: string; sourceUrl: string };
+  statementA: { text: string; textHi: string | null; date: string; sourceName: string; sourceUrl: string };
+  statementB: { text: string; textHi: string | null; date: string; sourceName: string; sourceUrl: string };
 }
 
 export interface Source {
@@ -57,12 +59,14 @@ export interface TimelineEvent {
   id: string;
   eventDate: string;
   description: string;
+  descriptionHi: string | null;
   sourceSignalIds: string[];
 }
 
 export interface VerifiableFact {
   id: string;
   factText: string;
+  factTextHi: string | null;
   primaryDocUrl: string;
   docType: FactDocType;
   quotedSpan: string;

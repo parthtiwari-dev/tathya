@@ -48,6 +48,7 @@ class TopicSummary(BaseModel):
 class Claim(BaseModel):
     id: str
     claimText: str
+    claimTextHi: Optional[str] = None
     sourceType: str
     sourceSignalId: str
     quotedSpan: str
@@ -69,12 +70,14 @@ class TimelineEvent(BaseModel):
     id: str
     eventDate: date
     description: str
+    descriptionHi: Optional[str] = None
     sourceSignalIds: list[str] = []
 
 
 class VerifiableFact(BaseModel):
     id: str
     factText: str
+    factTextHi: Optional[str] = None
     primaryDocUrl: str
     docType: str
     quotedSpan: str
@@ -101,11 +104,13 @@ class HistoryEntry(BaseModel):
 class OpenQuestion(BaseModel):
     id: str
     question: str
+    questionHi: Optional[str] = None
     relatedClaimId: Optional[str] = None
 
 
 class ContradictionStatement(BaseModel):
     text: str
+    textHi: Optional[str] = None
     date: date
     sourceName: str
     sourceUrl: str

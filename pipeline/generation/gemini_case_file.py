@@ -20,6 +20,7 @@ DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 class GroundedClaim(BaseModel):
     source_type: str
     claim_text: str
+    claim_text_hi: str = Field(description="Accurate Hindi translation of claim_text. Never translate quoted_span itself -- it stays in its original language, since it's a direct quote, not Gemini's own text.")
     quoted_span: str
     source_url: str
 
@@ -27,11 +28,13 @@ class GroundedClaim(BaseModel):
 class GroundedEvent(BaseModel):
     event_date: str
     description: str
+    description_hi: str = Field(description="Accurate Hindi translation of description.")
     source_urls: list[str]
 
 
 class GroundedFact(BaseModel):
     fact_text: str
+    fact_text_hi: str = Field(description="Accurate Hindi translation of fact_text. Never translate quoted_span itself.")
     primary_doc_url: str
     quoted_span: str
 
@@ -76,10 +79,11 @@ def _prompt(draft: CaseFileDraft) -> str:
         "You build non-partisan civic case files. Use only the supplied evidence. "
         "Do not add facts from memory. Do not decide truth or falsehood. "
         "Every claim, event, and fact must preserve a source URL and quoted span from the evidence. "
-        "For title_hi and neutral_summary_hi: produce an accurate, natural Hindi translation of title and "
-        "neutral_summary respectively -- same facts, same neutral tone, no additions or omissions. "
-        "Do not translate quoted_span, claim_text, event descriptions, or fact_text -- leave those in "
-        "whatever language the source evidence is in; only title_hi and neutral_summary_hi are translated. "
+        "For every _hi field (title_hi, neutral_summary_hi, claim_text_hi, description_hi, fact_text_hi): "
+        "produce an accurate, natural Hindi translation of the corresponding English field -- same facts, "
+        "same neutral tone, no additions or omissions, no paraphrasing beyond what natural Hindi phrasing "
+        "requires. Never translate quoted_span -- it is a direct quote from the source and must stay in "
+        "whatever language the source evidence is in, exactly as supplied. "
         "Return valid JSON matching the schema.\n\n"
         f"EVIDENCE_DRAFT:\n{json.dumps(asdict(draft), ensure_ascii=False, indent=2)}"
     )

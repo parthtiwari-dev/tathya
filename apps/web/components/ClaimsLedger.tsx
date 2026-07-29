@@ -2,6 +2,9 @@ import { Landmark, Newspaper, Users, Flag } from "lucide-react";
 import type { Claim, ClaimSourceType } from "@/lib/types";
 import { relativeTime } from "@/lib/format";
 import { CorrectionReportButton } from "@/components/CorrectionReportButton";
+import { localizedText } from "@/lib/localizedText";
+
+const enBadgeTitle = { en: "Hindi translation not yet available — showing English", hi: "हिंदी अनुवाद अभी उपलब्ध नहीं — अंग्रेज़ी दिखाई जा रही है।" };
 
 const columnOrder: ClaimSourceType[] = ["government", "opposition", "media", "citizen"];
 
@@ -48,23 +51,33 @@ export function ClaimsLedger({ claims, lang = "en" }: { claims: Claim[]; lang?: 
                 {columnLabels[column.type][lang]}
               </h3>
               <ul className="mt-3 space-y-4">
-                {column.claims.map((claim) => (
-                  <li key={claim.id} className="rounded-lg border border-border bg-surface p-3.5">
-                    <p className="text-sm leading-relaxed text-ink">{claim.claimText}</p>
-                    <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
-                      "{claim.quotedSpan}"
-                    </blockquote>
-                    <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
-                      <a href={claim.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
-                        {claim.sourceName}
-                      </a>
-                      <span>{relativeTime(claim.publishedAt)}</span>
-                    </div>
-                    <div className="mt-2">
-                      <CorrectionReportButton targetTable="claims" targetId={claim.id} />
-                    </div>
-                  </li>
-                ))}
+                {column.claims.map((claim) => {
+                  const claimText = localizedText(claim.claimText, claim.claimTextHi, lang);
+                  return (
+                    <li key={claim.id} className="rounded-lg border border-border bg-surface p-3.5">
+                      <p className="text-sm leading-relaxed text-ink">
+                        {claimText.text}
+                        {claimText.isFallback && (
+                          <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-ink-muted" title={enBadgeTitle[lang]}>
+                            EN
+                          </span>
+                        )}
+                      </p>
+                      <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
+                        "{claim.quotedSpan}"
+                      </blockquote>
+                      <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
+                        <a href={claim.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
+                          {claim.sourceName}
+                        </a>
+                        <span>{relativeTime(claim.publishedAt)}</span>
+                      </div>
+                      <div className="mt-2">
+                        <CorrectionReportButton targetTable="claims" targetId={claim.id} />
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           );

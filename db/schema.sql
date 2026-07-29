@@ -15,15 +15,15 @@ alter table signals add constraint signals_snapshot_id_fkey foreign key (snapsho
 create table entities (id uuid primary key default gen_random_uuid(), name text not null, type text not null check (type in ('person', 'ministry', 'scheme', 'law', 'place')), aliases jsonb not null default '[]'::jsonb, slug text, unique (name, type));
 create table topics (id uuid primary key default gen_random_uuid(), title text not null, status topic_status not null default 'raw_cluster', first_seen timestamptz not null default now(), last_signal_at timestamptz not null, significance_score numeric not null default 0, summary text, summary_generated_at timestamptz, slug text, title_hi text, summary_hi text);
 create table topic_signals (topic_id uuid references topics(id), signal_id uuid references signals(id), primary key (topic_id, signal_id));
-create table events (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), event_date date not null, description text not null, source_signal_ids uuid[] not null, created_at timestamptz not null default now());
-create table claims (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), claim_text text not null, source_type claim_source_type not null, source_signal_id uuid not null references signals(id), quoted_span text not null, created_at timestamptz not null default now());
-create table verifiable_facts (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), fact_text text not null, primary_doc_url text not null, doc_type text not null check (doc_type in ('gazette', 'parliament_qa', 'pib', 'dataset')), quoted_span text not null, created_at timestamptz not null default now());
+create table events (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), event_date date not null, description text not null, source_signal_ids uuid[] not null, created_at timestamptz not null default now(), description_hi text);
+create table claims (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), claim_text text not null, source_type claim_source_type not null, source_signal_id uuid not null references signals(id), quoted_span text not null, created_at timestamptz not null default now(), claim_text_hi text);
+create table verifiable_facts (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id), fact_text text not null, primary_doc_url text not null, doc_type text not null check (doc_type in ('gazette', 'parliament_qa', 'pib', 'dataset')), quoted_span text not null, created_at timestamptz not null default now(), fact_text_hi text);
 create table topic_relations (id uuid primary key default gen_random_uuid(), topic_id_a uuid not null references topics(id), topic_id_b uuid not null references topics(id), relation_type relation_type not null, created_at timestamptz not null default now(), check (topic_id_a <> topic_id_b), unique (topic_id_a, topic_id_b, relation_type));
 create table corrections (id uuid primary key default gen_random_uuid(), target_table text not null check (target_table in ('claims', 'events', 'verifiable_facts')), target_row_id uuid not null, issue_description text not null, status correction_status not null default 'reported', resolved_at timestamptz, created_at timestamptz not null default now());
 create table source_run_metrics (id uuid primary key default gen_random_uuid(), source_id uuid not null references sources(id), collected_at timestamptz not null default now(), signal_count integer not null check (signal_count >= 0), status text not null check (status in ('success', 'failure')), detail text);
 create table topic_entities (topic_id uuid not null references topics(id) on delete cascade, entity_id uuid not null references entities(id), is_ministry boolean not null default false, primary key (topic_id, entity_id));
-create table open_questions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, question text not null, related_claim_id uuid references claims(id), created_at timestamptz not null default now());
-create table contradictions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, entity_name text not null, statement_a_text text not null, statement_a_date date not null, statement_a_source_signal_id uuid not null references signals(id), statement_b_text text not null, statement_b_date date not null, statement_b_source_signal_id uuid not null references signals(id), created_at timestamptz not null default now());
+create table open_questions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, question text not null, related_claim_id uuid references claims(id), created_at timestamptz not null default now(), question_hi text);
+create table contradictions (id uuid primary key default gen_random_uuid(), topic_id uuid not null references topics(id) on delete cascade, entity_name text not null, statement_a_text text not null, statement_a_date date not null, statement_a_source_signal_id uuid not null references signals(id), statement_b_text text not null, statement_b_date date not null, statement_b_source_signal_id uuid not null references signals(id), created_at timestamptz not null default now(), statement_a_text_hi text, statement_b_text_hi text);
 
 create function reject_snapshot_mutation() returns trigger language plpgsql as $$ begin raise exception 'snapshots are immutable'; end; $$;
 create trigger snapshots_no_update before update or delete on snapshots for each row execute function reject_snapshot_mutation();
@@ -238,14 +238,16 @@ create function append_topic_event(
   p_topic_id uuid,
   p_event_date date,
   p_description text,
-  p_source_signal_ids uuid[]
+  p_source_signal_ids uuid[],
+  p_description_hi text default null
 ) returns uuid language plpgsql as $$
 declare v_event_id uuid;
 begin
-  insert into events (topic_id, event_date, description, source_signal_ids)
-  values (p_topic_id, p_event_date, p_description, p_source_signal_ids)
+  insert into events (topic_id, event_date, description, source_signal_ids, description_hi)
+  values (p_topic_id, p_event_date, p_description, p_source_signal_ids, p_description_hi)
   on conflict (topic_id, event_date, md5(description)) do update
-  set source_signal_ids = excluded.source_signal_ids
+  set source_signal_ids = excluded.source_signal_ids,
+      description_hi = coalesce(excluded.description_hi, events.description_hi)
   returning id into v_event_id;
   return v_event_id;
 end;
@@ -256,14 +258,16 @@ create function append_topic_claim(
   p_claim_text text,
   p_source_type claim_source_type,
   p_source_signal_id uuid,
-  p_quoted_span text
+  p_quoted_span text,
+  p_claim_text_hi text default null
 ) returns uuid language plpgsql as $$
 declare v_claim_id uuid;
 begin
-  insert into claims (topic_id, claim_text, source_type, source_signal_id, quoted_span)
-  values (p_topic_id, p_claim_text, p_source_type, p_source_signal_id, p_quoted_span)
+  insert into claims (topic_id, claim_text, source_type, source_signal_id, quoted_span, claim_text_hi)
+  values (p_topic_id, p_claim_text, p_source_type, p_source_signal_id, p_quoted_span, p_claim_text_hi)
   on conflict (topic_id, source_signal_id, md5(claim_text)) do update
-  set quoted_span = excluded.quoted_span
+  set quoted_span = excluded.quoted_span,
+      claim_text_hi = coalesce(excluded.claim_text_hi, claims.claim_text_hi)
   returning id into v_claim_id;
   return v_claim_id;
 end;
@@ -274,14 +278,16 @@ create function append_topic_fact(
   p_fact_text text,
   p_primary_doc_url text,
   p_doc_type text,
-  p_quoted_span text
+  p_quoted_span text,
+  p_fact_text_hi text default null
 ) returns uuid language plpgsql as $$
 declare v_fact_id uuid;
 begin
-  insert into verifiable_facts (topic_id, fact_text, primary_doc_url, doc_type, quoted_span)
-  values (p_topic_id, p_fact_text, p_primary_doc_url, p_doc_type, p_quoted_span)
+  insert into verifiable_facts (topic_id, fact_text, primary_doc_url, doc_type, quoted_span, fact_text_hi)
+  values (p_topic_id, p_fact_text, p_primary_doc_url, p_doc_type, p_quoted_span, p_fact_text_hi)
   on conflict (topic_id, primary_doc_url, md5(fact_text)) do update
-  set quoted_span = excluded.quoted_span
+  set quoted_span = excluded.quoted_span,
+      fact_text_hi = coalesce(excluded.fact_text_hi, verifiable_facts.fact_text_hi)
   returning id into v_fact_id;
   return v_fact_id;
 end;

@@ -1,11 +1,13 @@
 import type { VerifiableFact } from "@/lib/types";
 import { CorrectionReportButton } from "@/components/CorrectionReportButton";
+import { localizedText } from "@/lib/localizedText";
 
 const heading = { en: "Verifiable Facts", hi: "सत्यापन योग्य तथ्य" };
 const subheading = {
   en: "Checked against primary government documents only — not a claim, a confirmed record.",
   hi: "केवल प्राथमिक सरकारी दस्तावेज़ों से सत्यापित — यह दावा नहीं, एक पुष्ट अभिलेख है।",
 };
+const enBadgeTitle = { en: "Hindi translation not yet available — showing English", hi: "हिंदी अनुवाद अभी उपलब्ध नहीं — अंग्रेज़ी दिखाई जा रही है।" };
 
 const docTypeLabel: Record<VerifiableFact["docType"], { en: string; hi: string }> = {
   gazette: { en: "Gazette notification", hi: "राजपत्र अधिसूचना" },
@@ -25,22 +27,32 @@ export function VerifiableFactsPanel({ facts, lang = "en" }: { facts: Verifiable
       <p className="mt-1 text-xs text-ink-secondary">{subheading[lang]}</p>
 
       <ul className="mt-4 space-y-3">
-        {facts.map((fact) => (
-          <li key={fact.id} className="rounded-lg border border-border bg-paper p-3.5">
-            <p className="text-sm leading-relaxed text-ink">{fact.factText}</p>
-            <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
-              "{fact.quotedSpan}"
-            </blockquote>
-            <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
-              <a href={fact.primaryDocUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
-                {docTypeLabel[fact.docType][lang]}
-              </a>
-            </div>
-            <div className="mt-2">
-              <CorrectionReportButton targetTable="verifiable_facts" targetId={fact.id} />
-            </div>
-          </li>
-        ))}
+        {facts.map((fact) => {
+          const factText = localizedText(fact.factText, fact.factTextHi, lang);
+          return (
+            <li key={fact.id} className="rounded-lg border border-border bg-paper p-3.5">
+              <p className="text-sm leading-relaxed text-ink">
+                {factText.text}
+                {factText.isFallback && (
+                  <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-ink-muted" title={enBadgeTitle[lang]}>
+                    EN
+                  </span>
+                )}
+              </p>
+              <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
+                "{fact.quotedSpan}"
+              </blockquote>
+              <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
+                <a href={fact.primaryDocUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
+                  {docTypeLabel[fact.docType][lang]}
+                </a>
+              </div>
+              <div className="mt-2">
+                <CorrectionReportButton targetTable="verifiable_facts" targetId={fact.id} />
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

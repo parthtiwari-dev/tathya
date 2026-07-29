@@ -74,6 +74,7 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
                 description=event.description,
                 source_signal_ids=tuple(matched_ids),
                 source_urls=tuple(matched_urls),
+                description_hi=event.description_hi,
             )
         )
 
@@ -90,6 +91,7 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
                 quoted_span=claim.quoted_span,
                 source_signal_id=row["id"],
                 source_url=claim.source_url,
+                claim_text_hi=claim.claim_text_hi,
             )
         )
 
@@ -104,6 +106,7 @@ def build_grounded_case_file_draft(cluster: TopicCluster) -> tuple[CaseFileDraft
                 primary_doc_url=fact.primary_doc_url,
                 doc_type=_doc_type(row),
                 quoted_span=fact.quoted_span,
+                fact_text_hi=fact.fact_text_hi,
             )
         )
 

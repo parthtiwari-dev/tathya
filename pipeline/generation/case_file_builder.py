@@ -19,6 +19,12 @@ class DraftEvent:
     description: str
     source_signal_ids: tuple[str, ...]
     source_urls: tuple[str, ...]
+    # None from the extractive path: `description` here is a raw excerpt of
+    # source text (see _first_sentence), not a paraphrase -- there's no
+    # honest mechanical translation of arbitrary extracted text. Only the
+    # grounded (Gemini) path, where description is Gemini's own composed
+    # text rather than a raw excerpt, can populate this.
+    description_hi: str | None = None
 
 
 @dataclass(frozen=True)
@@ -28,6 +34,10 @@ class DraftClaim:
     quoted_span: str
     source_signal_id: str
     source_url: str
+    # None from the extractive path: claim_text IS quoted_span here (the same
+    # `span` variable, see _claims below) -- translating claim_text without
+    # touching quoted_span would misrepresent a direct quote as a paraphrase.
+    claim_text_hi: str | None = None
 
 
 @dataclass(frozen=True)
@@ -36,12 +46,20 @@ class DraftFact:
     primary_doc_url: str
     doc_type: str
     quoted_span: str
+    # Same reasoning as DraftClaim.claim_text_hi -- fact_text IS quoted_span
+    # on the extractive path.
+    fact_text_hi: str | None = None
 
 
 @dataclass(frozen=True)
 class DraftOpenQuestion:
     question: str
     related_claim_source_signal_id: str
+    # Unlike claims/events/facts, this is a fixed, hand-authored template
+    # sentence (see _open_questions), not extracted source text -- so a
+    # plain-template Hindi mirror is honest here, same reasoning as
+    # _summary_hi.
+    question_hi: str | None = None
 
 
 @dataclass(frozen=True)
@@ -53,6 +71,8 @@ class DraftContradiction:
     statement_b_text: str
     statement_b_date: str
     statement_b_source_signal_id: str
+    statement_a_text_hi: str | None = None
+    statement_b_text_hi: str | None = None
 
 
 @dataclass(frozen=True)
@@ -118,15 +138,21 @@ def _open_questions(claims: tuple[DraftClaim, ...]) -> list[DraftOpenQuestion]:
     if not claims or any(claim.source_type == "govt" for claim in claims):
         return []
     first = claims[0]
+    has_citizen = any(c.source_type == "citizen" for c in claims)
     return [
         DraftOpenQuestion(
             question=(
                 "No official government statement on this has been recorded as a "
                 "verifiable fact yet -- only "
-                + ("citizen and " if any(c.source_type == "citizen" for c in claims) else "")
+                + ("citizen and " if has_citizen else "")
                 + "media reporting exists so far."
             ),
             related_claim_source_signal_id=first.source_signal_id,
+            question_hi=(
+                "इस बारे में अभी तक कोई आधिकारिक सरकारी बयान वेरिफ़ायक तथ्य के रूप में दर्ज नहीं किया गया है — अभी तक केवल "
+                + ("नागरिक और " if has_citizen else "")
+                + "मीडिया रिपोर्टिंग ही मौजूद है।"
+            ),
         )
     ]
 
