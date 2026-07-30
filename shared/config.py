@@ -63,6 +63,38 @@ STARTER_SOURCES: tuple[SourceDefinition, ...] = (
         url="https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
         trust_category=TrustCategory.MEDIA,
     ),
+    # Independent YouTube journalists/creators. Added 25 July 2026 -- see
+    # docs/audit_and_next_steps.md Section 19 for the sourcing discussion,
+    # including the honest note that this initial batch skews critical-of-
+    # government in tone (that's what turned up researching "biggest India
+    # political YouTubers", not a deliberate curation choice) and pro-
+    # government-leaning independent voices are a known gap to fill later,
+    # not an oversight being ignored.
+    SourceDefinition(
+        key="unfiltered-by-samdish-youtube",
+        name="UNFILTERED by Samdish - YouTube",
+        type=SourceType.YOUTUBE,
+        url="https://www.youtube.com/feeds/videos.xml?channel_id=UCOtQWL2z-tFbI-mgy_Rpdgg",
+        trust_category=TrustCategory.MEDIA,
+    ),
+    SourceDefinition(
+        key="sunday-show-sarthak-youtube",
+        name="The Sunday Show (Sarthak Goswami) - YouTube",
+        type=SourceType.YOUTUBE,
+        url="https://www.youtube.com/feeds/videos.xml?channel_id=UC5fcjujOsqD-126Chn_BAuA",
+        trust_category=TrustCategory.MEDIA,
+    ),
+    SourceDefinition(
+        key="think-school-youtube",
+        name="Think School - YouTube",
+        type=SourceType.YOUTUBE,
+        url="https://www.youtube.com/feeds/videos.xml?channel_id=UCKZozRVHRYsYHGEyNKuhhdA",
+        trust_category=TrustCategory.MEDIA,
+        # Long-form business/geopolitics case studies, not day-to-day Indian
+        # government coverage -- kept enabled since an occasional relevant
+        # deep-dive is still worth catching, but don't expect much volume
+        # from this one compared to the two above.
+    ),
     SourceDefinition(
         key="the-wire",
         name="The Wire",

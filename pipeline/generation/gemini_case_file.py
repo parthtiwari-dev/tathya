@@ -42,8 +42,19 @@ class GroundedFact(BaseModel):
 class GroundedCaseFile(BaseModel):
     title: str
     title_hi: str = Field(description="Accurate Hindi translation of `title` -- a real headline, not a literal word-for-word translation, but never adding or dropping facts from the English version.")
-    neutral_summary: str = Field(description="One neutral paragraph grounded only in supplied evidence.")
-    neutral_summary_hi: str = Field(description="Accurate Hindi translation of `neutral_summary`, same facts, same neutrality, natural Hindi phrasing.")
+    neutral_summary: str = Field(
+        description=(
+            "A genuine full-picture synthesis of everything in the evidence, not a one-line recap. "
+            "Roughly 3-5 short paragraphs covering: what happened and how the story developed over time "
+            "(grounded in the events supplied); what each side has actually said, in neutral third-person "
+            "framing (government/opposition/media/citizen, whichever are present in the evidence -- never "
+            "invent a side that isn't in the evidence); and what remains unresolved or unconfirmed as of the "
+            "most recent evidence. Written so a reader who read nothing else on the page would understand "
+            "the full current state of the story. Still strictly neutral -- describe positions, never rule on "
+            "which one is correct, and never state anything not traceable to the supplied evidence."
+        )
+    )
+    neutral_summary_hi: str = Field(description="Accurate Hindi translation of `neutral_summary`, same facts, same neutrality, same paragraph structure, natural Hindi phrasing.")
     events: list[GroundedEvent]
     claims: list[GroundedClaim]
     verifiable_facts: list[GroundedFact]
@@ -79,6 +90,8 @@ def _prompt(draft: CaseFileDraft) -> str:
         "You build non-partisan civic case files. Use only the supplied evidence. "
         "Do not add facts from memory. Do not decide truth or falsehood. "
         "Every claim, event, and fact must preserve a source URL and quoted span from the evidence. "
+        "neutral_summary is the most important field on the page -- it should read as a genuine, complete "
+        "account of the story so far, not a teaser. See its schema description for exactly what to cover. "
         "For every _hi field (title_hi, neutral_summary_hi, claim_text_hi, description_hi, fact_text_hi): "
         "produce an accurate, natural Hindi translation of the corresponding English field -- same facts, "
         "same neutral tone, no additions or omissions, no paraphrasing beyond what natural Hindi phrasing "

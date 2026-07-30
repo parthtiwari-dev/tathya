@@ -40,7 +40,13 @@ export function TopicPageBody({ topic }: { topic: Topic }) {
         )}
       </h1>
 
-      <p className="mt-4 text-[16px] leading-relaxed text-ink-secondary sm:text-[17px]">{summary.text}</p>
+      <div className="mt-4 space-y-3">
+        {summary.text.split(/\n{2,}/).map((paragraph, i) => (
+          <p key={i} className="text-[16px] leading-relaxed text-ink-secondary sm:text-[17px]">
+            {paragraph}
+          </p>
+        ))}
+      </div>
 
       <div className="mt-3">
         <TrustBreakdown counts={topic.sourceCount} lang={lang} />

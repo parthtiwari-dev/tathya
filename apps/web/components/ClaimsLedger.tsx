@@ -63,9 +63,11 @@ export function ClaimsLedger({ claims, lang = "en" }: { claims: Claim[]; lang?: 
                           </span>
                         )}
                       </p>
-                      <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
-                        "{claim.quotedSpan}"
-                      </blockquote>
+                      {claim.claimText.trim() !== claim.quotedSpan.trim() && (
+                        <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
+                          "{claim.quotedSpan}"
+                        </blockquote>
+                      )}
                       <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
                         <a href={claim.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
                           {claim.sourceName}

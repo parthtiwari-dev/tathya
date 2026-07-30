@@ -39,9 +39,11 @@ export function VerifiableFactsPanel({ facts, lang = "en" }: { facts: Verifiable
                   </span>
                 )}
               </p>
-              <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
-                "{fact.quotedSpan}"
-              </blockquote>
+              {fact.factText.trim() !== fact.quotedSpan.trim() && (
+                <blockquote className="mt-2 border-l-2 border-accent/40 pl-2.5 text-xs italic text-ink-secondary">
+                  "{fact.quotedSpan}"
+                </blockquote>
+              )}
               <div className="mt-2.5 flex items-center justify-between text-xs text-ink-muted">
                 <a href={fact.primaryDocUrl} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:text-accent hover:underline">
                   {docTypeLabel[fact.docType][lang]}

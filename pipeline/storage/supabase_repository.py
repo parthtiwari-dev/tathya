@@ -468,6 +468,19 @@ class SupabaseRepository:
         )
         if not topic_id:
             raise RuntimeError(f"Could not persist topic draft {draft.title}")
+        # Replace, don't accumulate: without this, re-running persist for the
+        # same topic (every scheduled case-file.yml cycle, or a generation
+        # path switching extractive -> grounded) piled up duplicate/stale
+        # rows instead of reflecting the current draft. open_questions had no
+        # dedup key at all and could repeat unboundedly (see
+        # docs/audit_and_next_steps.md Section 18). Order matters:
+        # open_questions.related_claim_id references claims(id), so
+        # open_questions must be deleted before claims.
+        self._delete(f"open_questions?topic_id=eq.{topic_id}")
+        self._delete(f"contradictions?topic_id=eq.{topic_id}")
+        self._delete(f"claims?topic_id=eq.{topic_id}")
+        self._delete(f"events?topic_id=eq.{topic_id}")
+        self._delete(f"verifiable_facts?topic_id=eq.{topic_id}")
         for event in draft.events:
             self._rpc(
                 "append_topic_event",
@@ -604,6 +617,20 @@ class SupabaseRepository:
                 "Content-Type": "application/json",
             },
             method="PATCH",
+        )
+        with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
+            raw = response.read().decode("utf-8").strip()
+            return json.loads(raw) if raw else None
+
+    def _delete(self, path: str) -> object:
+        request = Request(
+            f"{self.url.rstrip('/')}/rest/v1/{path}",
+            headers={
+                "apikey": self.service_role_key,
+                "Authorization": f"Bearer {self.service_role_key}",
+                "Prefer": "return=minimal",
+            },
+            method="DELETE",
         )
         with urlopen(request, timeout=30) as response:  # noqa: S310 -- URL is deployment config.
             raw = response.read().decode("utf-8").strip()
